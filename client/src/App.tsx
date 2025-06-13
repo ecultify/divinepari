@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import './App.css';
 
@@ -28,34 +28,16 @@ function App() {
 
   const API_BASE = process.env.REACT_APP_API_URL || '/api';
 
-  useEffect(() => {
-    loadPosters();
-  }, []);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    filterPostersByGender();
-  }, [selectedGender, allPosters]);
-
-  // Cleanup camera stream when component unmounts
-  useEffect(() => {
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [stream]);
-
-  const loadPosters = async () => {
+  const loadPosters = useCallback(async () => {
     try {
       const response = await axios.get(`${API_BASE}/posters`);
       setAllPosters(response.data);
     } catch (error) {
       console.error('Error loading posters:', error);
     }
-  };
+  }, [API_BASE]);
 
-  const filterPostersByGender = () => {
+  const filterPostersByGender = useCallback(() => {
     if (!selectedGender) {
       setFilteredPosters([]);
       return;
@@ -75,7 +57,24 @@ function App() {
     
     setFilteredPosters(filtered);
     setSelectedPoster(null); // Reset selection when gender changes
-  };
+  }, [selectedGender, allPosters]);
+
+  useEffect(() => {
+    loadPosters();
+  }, [loadPosters]);
+
+  useEffect(() => {
+    filterPostersByGender();
+  }, [filterPostersByGender]);
+
+  // Cleanup camera stream when component unmounts
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
 
   const getTargetSide = (posterName: string): 'left' | 'right' => {
     // Based on your specification:
@@ -414,7 +413,7 @@ function App() {
           {/* Photo Preview */}
           {userImagePreview && (
             <div className="image-preview">
-              <img src={userImagePreview} alt="Your captured or uploaded photo" />
+              <img src={userImagePreview} alt="User" />
               <p>Your Photo</p>
               <button onClick={resetProcess} className="retake-button">
                 🔄 Take Another Photo
@@ -504,7 +503,7 @@ function App() {
           <div className="step result">
             <h2>🎉 Your Amazing Poster!</h2>
             <div className="final-image">
-              <img src={finalImage} alt="Final poster with face swap" />
+              <img src={finalImage} alt="Final poster" />
               <div className="result-actions">
                 <button onClick={downloadPoster} className="download-button">
                   💾 Download Poster
