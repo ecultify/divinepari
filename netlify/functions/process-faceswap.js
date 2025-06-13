@@ -60,16 +60,16 @@ exports.handler = async (event, context) => {
     const userImagePath = path.join(tempDir, `user-${uniqueId}.jpg`);
     fs.writeFileSync(userImagePath, userImageFile.content);
 
-    // Get poster path
-    const posterPath = path.join(process.cwd(), 'posters', posterName);
+    // Get poster from URL (since it's served as static file)
+    const posterUrl = `https://${event.headers.host}/posters/${posterName}`;
     
-    if (!fs.existsSync(posterPath)) {
-      return {
-        statusCode: 404,
-        headers,
-        body: JSON.stringify({ error: 'Poster not found' }),
-      };
-    }
+    // Download poster image
+    const posterResponse = await axios.get(posterUrl, { responseType: 'arraybuffer' });
+    const posterBuffer = Buffer.from(posterResponse.data);
+    
+    // Save poster temporarily
+    const posterPath = path.join(tempDir, `poster-${uniqueId}.jpg`);
+    fs.writeFileSync(posterPath, posterBuffer);
 
     // Step 1: Extract the target side from the poster
     const posterImage = sharp(posterPath);
@@ -157,7 +157,7 @@ exports.handler = async (event, context) => {
     const finalImageBase64 = finalImageBuffer.toString('base64');
 
     // Clean up temp files
-    [userImagePath, targetImagePath, swappedImagePath, resizedSwappedPath, finalImagePath].forEach(filePath => {
+    [userImagePath, posterPath, targetImagePath, swappedImagePath, resizedSwappedPath, finalImagePath].forEach(filePath => {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }

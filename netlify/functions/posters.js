@@ -27,24 +27,16 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    // In Netlify, we need to use the build directory path
-    const postersPath = path.join(process.cwd(), 'posters');
-    
-    if (!fs.existsSync(postersPath)) {
-      return {
-        statusCode: 404,
-        headers,
-        body: JSON.stringify({ error: 'Posters directory not found' }),
-      };
-    }
-
-    const posterFiles = fs.readdirSync(postersPath)
-      .filter(file => /\.(jpg|jpeg|png|gif)$/i.test(file))
-      .map(file => ({
-        name: file,
-        path: `/posters/${file}`,
-        fullPath: path.join(postersPath, file)
-      }));
+    // In Netlify, posters are served as static files from the client/public/posters directory
+    // We'll return a hardcoded list since they're static files
+    const posterFiles = [
+      { name: 'Option 1F.jpg', path: '/posters/Option 1F.jpg' },
+      { name: 'Option 1M.jpg', path: '/posters/Option 1M.jpg' },
+      { name: 'Option 2F.jpg', path: '/posters/Option 2F.jpg' },
+      { name: 'Option 2M.jpg', path: '/posters/Option 2M.jpg' },
+      { name: 'Option 3F.jpg', path: '/posters/Option 3F.jpg' },
+      { name: 'Option 3MF.jpg', path: '/posters/Option 3MF.jpg' }
+    ];
 
     return {
       statusCode: 200,
