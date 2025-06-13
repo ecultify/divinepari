@@ -37,8 +37,15 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Segmind API configuration
-const SEGMIND_API_KEY = process.env.SEGMIND_API_KEY || 'SG_55ab857ecea4de8d';
+const SEGMIND_API_KEY = process.env.SEGMIND_API_KEY;
 const SEGMIND_URL = 'https://api.segmind.com/v1/faceswap-v3';
+
+// Validate required environment variables
+if (!SEGMIND_API_KEY) {
+    console.error('❌ SEGMIND_API_KEY environment variable is required');
+    console.error('Please set SEGMIND_API_KEY in your environment variables or .env file');
+    process.exit(1);
+}
 
 // Utility functions
 function imageFileToBase64(imagePath) {

@@ -17,7 +17,7 @@ function App() {
   const [selectedPoster, setSelectedPoster] = useState<Poster | null>(null);
   const [processing, setProcessing] = useState(false);
   const [finalImage, setFinalImage] = useState<string>('');
-  const [uploadedImagePath, setUploadedImagePath] = useState<string>('');
+
   
   // Camera states
   const [cameraMode, setCameraMode] = useState<'camera' | 'upload'>('camera');
@@ -26,7 +26,7 @@ function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const API_BASE = 'http://localhost:5000/api';
+  const API_BASE = process.env.REACT_APP_API_URL || '/api';
 
   useEffect(() => {
     loadPosters();
@@ -229,27 +229,11 @@ function App() {
     setUserImagePreview('');
   };
 
-  const uploadUserImage = async () => {
-    if (!userImage) return false;
 
-    const formData = new FormData();
-    formData.append('userImage', userImage);
-
-    try {
-      const response = await axios.post(`${API_BASE}/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      setUploadedImagePath(response.data.filePath);
-      return true;
-    } catch (error) {
-      console.error('Upload error:', error);
-      return false;
-    }
-  };
 
   const processFaceSwap = async () => {
-    if (!selectedPoster || !uploadedImagePath) {
-      alert('Please select a poster and upload your image first!');
+    if (!selectedPoster || !userImage) {
+      alert('Please select a poster and capture/upload your image first!');
       return;
     }
 
@@ -259,14 +243,21 @@ function App() {
     try {
       const targetSide = getTargetSide(selectedPoster.name);
       
-      const response = await axios.post(`${API_BASE}/process-faceswap`, {
-        userImagePath: uploadedImagePath,
-        posterName: selectedPoster.name,
-        targetSide: targetSide
+      // Create FormData for the serverless function
+      const formData = new FormData();
+      formData.append('userImage', userImage);
+      formData.append('posterName', selectedPoster.name);
+      formData.append('targetSide', targetSide);
+
+      const response = await axios.post(`${API_BASE}/process-faceswap`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 60000, // 60 seconds for serverless function
       });
 
       if (response.data.success) {
-        setFinalImage(`http://localhost:5000${response.data.finalImageUrl}`);
+        setFinalImage(response.data.finalImage); // This is now a base64 data URL
       } else {
         alert('Face swap failed!');
       }
@@ -294,10 +285,7 @@ function App() {
       return;
     }
 
-    const uploaded = await uploadUserImage();
-    if (uploaded) {
-      await processFaceSwap();
-    }
+    await processFaceSwap();
   };
 
   const resetProcess = () => {
@@ -306,7 +294,6 @@ function App() {
     setSelectedGender('');
     setSelectedPoster(null);
     setFinalImage('');
-    setUploadedImagePath('');
     stopCamera();
   };
 
@@ -471,7 +458,7 @@ function App() {
                   className={`poster-item ${selectedPoster?.name === poster.name ? 'selected' : ''}`}
                   onClick={() => setSelectedPoster(poster)}
                 >
-                  <img src={`http://localhost:5000${poster.path}`} alt={poster.name} />
+                  <img src={poster.path} alt={poster.name} />
                   <p>{poster.name}</p>
                   <div className="poster-info">
                     Target: {getTargetSide(poster.name)} side
