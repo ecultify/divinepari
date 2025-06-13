@@ -457,7 +457,7 @@ function App() {
                   className={`poster-item ${selectedPoster?.name === poster.name ? 'selected' : ''}`}
                   onClick={() => setSelectedPoster(poster)}
                 >
-                  <img src={poster.path} alt={poster.name} />
+                  <img src={poster.path} alt="Poster template" />
                   <p>{poster.name}</p>
                   <div className="poster-info">
                     Target: {getTargetSide(poster.name)} side
