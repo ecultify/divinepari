@@ -37,6 +37,19 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    // Check environment variables first
+    const SEGMIND_API_KEY = process.env.SEGMIND_API_KEY;
+    if (!SEGMIND_API_KEY) {
+      console.error('SEGMIND_API_KEY not found in environment variables');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: 'SEGMIND_API_KEY not configured' }),
+      };
+    }
+    
+    console.log('Environment check passed, processing request...');
+    
     // Parse multipart form data
     const result = await multipart.parse(event);
     
@@ -89,16 +102,7 @@ exports.handler = async (event, context) => {
       .toFile(targetImagePath);
 
     // Step 2: Perform face swap using Segmind API
-    const SEGMIND_API_KEY = process.env.SEGMIND_API_KEY;
     const SEGMIND_URL = 'https://api.segmind.com/v1/faceswap-v3';
-
-    if (!SEGMIND_API_KEY) {
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: 'SEGMIND_API_KEY not configured' }),
-      };
-    }
 
     const sourceImageBase64 = imageFileToBase64(userImagePath);
     const targetImageBase64 = imageFileToBase64(targetImagePath);
@@ -123,7 +127,9 @@ exports.handler = async (event, context) => {
     console.log('Calling Segmind API for face swap...');
     const faceSwapResponse = await axios.post(SEGMIND_URL, faceSwapData, {
       headers: { 'x-api-key': SEGMIND_API_KEY },
-      timeout: 30000
+      timeout: 60000, // Increased timeout to 60 seconds
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity
     });
 
     // Step 3: Save the face-swapped result
@@ -178,12 +184,41 @@ exports.handler = async (event, context) => {
 
   } catch (error) {
     console.error('Face swap error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.status,
+      responseData: error.response?.data
+    });
+    
+    // Clean up temp files even on error
+    try {
+      const tempDir = '/tmp';
+      const uniqueId = uuidv4();
+      [
+        path.join(tempDir, `user-${uniqueId}.jpg`),
+        path.join(tempDir, `poster-${uniqueId}.jpg`),
+        path.join(tempDir, `target-${uniqueId}.jpg`),
+        path.join(tempDir, `swapped-${uniqueId}.jpg`),
+        path.join(tempDir, `resized-${uniqueId}.jpg`),
+        path.join(tempDir, `final-${uniqueId}.jpg`)
+      ].forEach(filePath => {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      });
+    } catch (cleanupError) {
+      console.error('Cleanup error:', cleanupError.message);
+    }
+    
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({ 
         error: 'Face swap failed', 
-        details: error.response?.data || error.message 
+        details: error.response?.data || error.message,
+        errorCode: error.code,
+        timestamp: new Date().toISOString()
       }),
     };
   }
