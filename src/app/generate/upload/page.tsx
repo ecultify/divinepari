@@ -1,0 +1,421 @@
+'use client';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+
+function UploadPhotoPageContent() {
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  // Get data from previous steps
+  const gender = searchParams.get('gender');
+  const selectedPoster = searchParams.get('poster');
+
+  useEffect(() => {
+    // If missing required data, redirect back to start
+    if (!gender || !selectedPoster) {
+      router.push('/generate/gender');
+    }
+  }, [gender, selectedPoster, router]);
+
+  const handleFileUpload = (file: File) => {
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setUploadedImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    const files = e.dataTransfer.files;
+    if (files[0]) {
+      handleFileUpload(files[0]);
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files[0]) {
+      handleFileUpload(files[0]);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (uploadedImage && selectedPoster && gender) {
+      setLoading(true);
+      
+      try {
+        // Store the user image in localStorage for the next page
+        localStorage.setItem('userImage', uploadedImage);
+        localStorage.setItem('selectedPoster', selectedPoster);
+        localStorage.setItem('selectedGender', gender);
+        
+        // Navigate to result page
+        router.push(`/generate/result?gender=${gender}&poster=${encodeURIComponent(selectedPoster)}`);
+      } catch (error) {
+        console.error('Error processing:', error);
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleCameraClick = async () => {
+    try {
+      // Request camera access
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user' } // Use front camera by default
+      });
+      
+      // Create video element to show camera feed
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.autoplay = true;
+      video.playsInline = true;
+      
+      // Create canvas to capture the photo
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      
+      // Create a simple camera interface
+      const cameraModal = document.createElement('div');
+      cameraModal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.9);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      `;
+      
+      video.style.cssText = `
+        max-width: 90%;
+        max-height: 70%;
+        border: 2px solid #F8FF13;
+      `;
+      
+      const captureBtn = document.createElement('button');
+      captureBtn.textContent = 'Capture Photo';
+      captureBtn.style.cssText = `
+        margin-top: 20px;
+        padding: 10px 20px;
+        background: #F8FF13;
+        color: black;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+      `;
+      
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = '×';
+      closeBtn.style.cssText = `
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 30px;
+        cursor: pointer;
+      `;
+      
+      cameraModal.appendChild(video);
+      cameraModal.appendChild(captureBtn);
+      cameraModal.appendChild(closeBtn);
+      document.body.appendChild(cameraModal);
+      
+      // Capture photo function
+      captureBtn.onclick = () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context?.drawImage(video, 0, 0);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+            handleFileUpload(file);
+          }
+        }, 'image/jpeg', 0.8);
+        
+        // Clean up
+        stream.getTracks().forEach(track => track.stop());
+        document.body.removeChild(cameraModal);
+        setShowModal(false);
+      };
+      
+      // Close camera function
+      closeBtn.onclick = () => {
+        stream.getTracks().forEach(track => track.stop());
+        document.body.removeChild(cameraModal);
+      };
+      
+    } catch (error) {
+      console.error('Camera access denied or not available:', error);
+      // Fallback to file input with camera preference
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.capture = 'camera';
+      input.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+          handleFileUpload(file);
+          setShowModal(false);
+        }
+      };
+      input.click();
+    }
+  };
+
+  const handleUploadClick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleFileUpload(file);
+        setShowModal(false);
+      }
+    };
+    input.click();
+  };
+
+  return (
+    <div className="w-full">
+      {/* Upload Photo Page */}
+      <section 
+        className="relative w-full bg-no-repeat bg-center min-h-screen"
+        style={{
+          backgroundImage: `url('/images/secondpage/Desktop.png')`,
+          backgroundSize: 'cover',
+        }}
+      >
+        {/* Mobile Background Override */}
+        <div 
+          className="absolute inset-0 block md:hidden bg-no-repeat bg-center"
+          style={{
+            backgroundImage: `url('/images/mobile/mobile.png')`,
+            backgroundSize: 'cover',
+          }}
+        />
+        
+        {/* Content Container */}
+        <div className="relative z-10 w-full h-full flex flex-col px-4 md:px-6 py-6">
+          {/* Logo - Moved 50px right on desktop, centered on mobile */}
+          <div className="flex justify-center md:justify-start mb-8" style={{ marginLeft: '50px' }}>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="transition-all duration-200 hover:opacity-80"
+            >
+              <img 
+                src="/images/landing/normalimages/parimatch.svg" 
+                alt="Parimatch Logo" 
+                className="h-16 md:h-16"
+              />
+            </button>
+          </div>
+          
+          {/* Step Progress Indicator - Larger with more gap on desktop */}
+          <div className="flex justify-center mb-4 md:mb-12">
+            <div className="flex items-center">
+              {[1, 2, 3, 4].map((step, index) => (
+                <div key={step} className="flex items-center">
+                  <div 
+                    className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center font-bold font-poppins text-sm md:text-base"
+                    style={{
+                      borderColor: (step === 1 || step === 2 || step === 3) ? '#F8FF13' : 'white',
+                      backgroundColor: (step === 1 || step === 2 || step === 3) ? '#F8FF13' : 'transparent',
+                      color: (step === 1 || step === 2 || step === 3) ? 'black' : 'white',
+                    }}
+                  >
+                    {step}
+                  </div>
+                  {index < 3 && (
+                    <>
+                      <div className="w-2 md:w-4"></div>
+                      <div className="w-8 md:w-16 h-0.5 bg-white"></div>
+                      <div className="w-2 md:w-4"></div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Form Container */}
+          <div className="flex justify-center items-center flex-1">
+            <div 
+              className="w-full max-w-2xl px-12 py-8 rounded-lg relative"
+              style={{
+                border: '2px solid transparent',
+                backgroundImage: 'linear-gradient(#111112, #111112), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                backgroundOrigin: 'border-box',
+                backgroundClip: 'padding-box, border-box',
+              }}
+            >
+              {/* Back Button */}
+              <button
+                onClick={() => window.history.back()}
+                className="absolute top-4 left-4 transition-all duration-200 hover:opacity-75"
+              >
+                <img src="/images/icons/backbutton.png" alt="Back" className="w-8 h-8" />
+              </button>
+
+              <h2 className="text-white text-lg md:text-xl font-medium text-center mb-6 font-poppins">
+                Upload Your Photo
+              </h2>
+              
+              {/* Upload Area - Vertical on mobile, horizontal on desktop */}
+              <div className="flex flex-col md:flex-row items-center justify-center space-y-6 md:space-y-0 md:space-x-6 mb-8">
+                {/* Preview Area */}
+                <div>
+                  {uploadedImage ? (
+                    <div className="w-48 h-48 bg-gray-300 rounded-lg overflow-hidden">
+                      <img 
+                        src={uploadedImage} 
+                        alt="Uploaded preview" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-48 h-48 bg-gray-300 rounded-lg"></div>
+                  )}
+                </div>
+
+                {/* Upload Zone */}
+                <div>
+                  <div
+                    className="w-48 h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all duration-200"
+                    style={{
+                      borderColor: dragActive ? '#F8FF13' : '#666666',
+                      backgroundColor: dragActive ? 'rgba(248, 255, 19, 0.1)' : 'transparent',
+                    }}
+                    onDrop={handleDrop}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragActive(true);
+                    }}
+                    onDragLeave={() => setDragActive(false)}
+                    onClick={() => setShowModal(true)}
+                  >
+                    <div className="flex flex-col items-center space-y-2">
+                      <img src="/images/icons/upload.png" alt="Upload" className="w-8 h-8" />
+                      <div className="text-white text-sm font-poppins">Upload your image</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex justify-center">
+                <button 
+                  onClick={handleSubmit}
+                  disabled={!uploadedImage || loading}
+                  className="px-16 py-3 font-bold text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200"
+                  style={{
+                    background: (uploadedImage && !loading) ? '#F8FF13' : '#585858',
+                    color: (uploadedImage && !loading) ? 'black' : 'black',
+                    border: (uploadedImage && !loading) ? '0.5px solid transparent' : 'none',
+                    backgroundImage: (uploadedImage && !loading)
+                      ? 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)'
+                      : 'none',
+                    backgroundOrigin: (uploadedImage && !loading) ? 'border-box' : 'initial',
+                    backgroundClip: (uploadedImage && !loading) ? 'padding-box, border-box' : 'initial',
+                    cursor: (uploadedImage && !loading) ? 'pointer' : 'not-allowed',
+                    opacity: (uploadedImage && !loading) ? 1 : 0.7,
+                  }}
+                >
+                  <span className="block transform skew-x-12">
+                    {loading ? 'PROCESSING...' : 'SUBMIT'}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Upload Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div 
+            className="relative rounded-lg p-6 w-80 md:w-auto"
+            style={{ 
+              backgroundColor: '#111112',
+              border: '0.5px solid #F8FF13'
+            }}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute top-3 right-3 text-white hover:text-gray-300 text-xl font-bold"
+            >
+              ×
+            </button>
+
+            {/* Modal content - Vertical on mobile, horizontal on desktop */}
+            <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6 py-4">
+              {/* Use Camera button */}
+              <button
+                onClick={handleCameraClick}
+                className="w-full md:w-auto flex items-center justify-center space-x-2 px-6 py-3 rounded-lg transition-colors"
+                style={{
+                  border: '0.5px solid #F8FF13',
+                  backgroundImage: 'linear-gradient(to right, #161616 0%, #565656 100%)',
+                }}
+              >
+                <span className="text-white font-poppins">Use Camera</span>
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0118.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+
+              {/* OR text */}
+              <div className="text-white font-poppins">or</div>
+
+              {/* Upload button */}
+              <button
+                onClick={handleUploadClick}
+                className="w-full md:w-auto flex items-center justify-center space-x-2 px-6 py-3 rounded-lg transition-colors"
+                style={{
+                  border: '0.5px solid #F8FF13',
+                  backgroundImage: 'linear-gradient(to right, #161616 0%, #565656 100%)',
+                }}
+              >
+                <span className="text-white font-poppins">Upload</span>
+                <img src="/images/icons/upload.png" alt="Upload" className="w-5 h-5" />
+              </button>
+
+              {/* Supported formats text - Below on mobile, right on desktop */}
+              <div className="text-gray-400 text-xs md:text-sm font-poppins text-center md:text-left">
+                ( supported file formats jpg, png, pdf )
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function UploadPhotoPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <UploadPhotoPageContent />
+    </Suspense>
+  );
+} 

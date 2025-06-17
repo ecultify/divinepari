@@ -1,0 +1,176 @@
+'use client';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+
+function PosterSelectionPageContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const gender = searchParams.get('gender');
+  const [selectedPoster, setSelectedPoster] = useState<string | null>(null);
+
+  useEffect(() => {
+    // If no gender specified, redirect back to gender selection
+    if (!gender) {
+      router.push('/generate/gender');
+    }
+  }, [gender, router]);
+
+  const posters = gender === 'male' 
+    ? ['Option 1M.jpg', 'Option 2M.jpg', 'Option 3M.jpg']
+    : ['Option 1F.jpg', 'Option 2F.jpg', 'Option 3F.jpg'];
+
+  const handlePosterSelect = (poster: string) => {
+    setSelectedPoster(poster);
+  };
+
+  const handleContinue = () => {
+    if (selectedPoster && gender) {
+      // Navigate to upload page with both gender and poster data
+      router.push(`/generate/upload?gender=${gender}&poster=${encodeURIComponent(selectedPoster)}`);
+    }
+  };
+
+  return (
+    <div className="w-full">
+      {/* Poster Selection Page */}
+      <section 
+        className="relative w-full bg-no-repeat bg-center min-h-screen"
+        style={{
+          backgroundImage: `url('/images/secondpage/Desktop.png')`,
+          backgroundSize: 'cover',
+        }}
+      >
+        {/* Mobile Background Override */}
+        <div 
+          className="absolute inset-0 block md:hidden bg-no-repeat bg-center"
+          style={{
+            backgroundImage: `url('/images/mobile/mobile.png')`,
+            backgroundSize: 'cover',
+          }}
+        />
+        
+        {/* Content Container */}
+        <div className="relative z-10 w-full h-full flex flex-col px-4 md:px-6 py-6">
+          {/* Logo - Moved 50px right on desktop, centered on mobile */}
+          <div className="flex justify-center md:justify-start mb-8" style={{ marginLeft: '50px' }}>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="transition-all duration-200 hover:opacity-80"
+            >
+              <img 
+                src="/images/landing/normalimages/parimatch.svg" 
+                alt="Parimatch Logo" 
+                className="h-16 md:h-16"
+              />
+            </button>
+          </div>
+          
+          {/* Step Progress Indicator - Larger with more gap on desktop */}
+          <div className="flex justify-center mb-4 md:mb-12">
+            <div className="flex items-center">
+              {[1, 2, 3, 4].map((step, index) => (
+                <div key={step} className="flex items-center">
+                  <div 
+                    className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center font-bold font-poppins text-sm md:text-base"
+                    style={{
+                      borderColor: (step === 1 || step === 2) ? '#F8FF13' : 'white',
+                      backgroundColor: (step === 1 || step === 2) ? '#F8FF13' : 'transparent',
+                      color: (step === 1 || step === 2) ? 'black' : 'white',
+                    }}
+                  >
+                    {step}
+                  </div>
+                  {index < 3 && (
+                    <>
+                      <div className="w-2 md:w-4"></div>
+                      <div className="w-8 md:w-16 h-0.5 bg-white"></div>
+                      <div className="w-2 md:w-4"></div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Form Container */}
+          <div className="flex justify-center items-center flex-1">
+            <div 
+              className="w-full max-w-2xl px-12 py-8 rounded-lg relative"
+              style={{
+                border: '2px solid transparent',
+                backgroundImage: 'linear-gradient(#111112, #111112), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                backgroundOrigin: 'border-box',
+                backgroundClip: 'padding-box, border-box',
+              }}
+            >
+              {/* Back Button */}
+              <button
+                onClick={() => window.history.back()}
+                className="absolute top-4 left-4 transition-all duration-200 hover:opacity-75"
+              >
+                <img src="/images/icons/backbutton.png" alt="Back" className="w-8 h-8" />
+              </button>
+
+              <h2 className="text-white text-lg md:text-xl font-medium text-center mb-6 font-poppins">
+                Select your scene
+              </h2>
+              
+              {/* Poster Selection - Vertical on mobile, horizontal on desktop */}
+              <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6 mb-8">
+                {posters.map((poster, index) => (
+                  <button
+                    key={poster}
+                    onClick={() => handlePosterSelect(poster)}
+                    className="relative transition-all duration-200 hover:scale-105"
+                    style={{
+                      border: selectedPoster === poster ? '3px solid #F8FF13' : '3px solid transparent',
+                      borderRadius: '8px',
+                      padding: '4px',
+                    }}
+                  >
+                    <img
+                      src={`/images/posters/${poster}`}
+                      alt={`Poster ${index + 1}`}
+                      className="w-32 h-48 md:w-40 md:h-60 object-cover rounded"
+                    />
+                  </button>
+                ))}
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex justify-center">
+                <button 
+                  onClick={handleContinue}
+                  disabled={!selectedPoster}
+                  className="px-16 py-3 font-bold text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200"
+                  style={{
+                    background: selectedPoster ? '#F8FF13' : '#585858',
+                    color: selectedPoster ? 'black' : 'black',
+                    border: selectedPoster ? '0.5px solid transparent' : 'none',
+                    backgroundImage: selectedPoster 
+                      ? 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)'
+                      : 'none',
+                    backgroundOrigin: selectedPoster ? 'border-box' : 'initial',
+                    backgroundClip: selectedPoster ? 'padding-box, border-box' : 'initial',
+                    cursor: selectedPoster ? 'pointer' : 'not-allowed',
+                    opacity: selectedPoster ? 1 : 0.7,
+                  }}
+                >
+                  <span className="block transform skew-x-12">SUBMIT</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default function PosterSelectionPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PosterSelectionPageContent />
+    </Suspense>
+  );
+} 
