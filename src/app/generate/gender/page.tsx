@@ -81,7 +81,7 @@ export default function GenderSelectionPage() {
           {/* Form Container */}
           <div className="flex justify-center items-center flex-1">
             <div 
-              className="w-full max-w-2xl px-12 py-8 rounded-lg relative"
+              className="w-full max-w-4xl px-8 md:px-16 py-12 rounded-lg relative"
               style={{
                 border: '2px solid transparent',
                 backgroundImage: 'linear-gradient(#111112, #111112), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
@@ -97,16 +97,16 @@ export default function GenderSelectionPage() {
                 <img src="/images/icons/backbutton.png" alt="Back" className="w-8 h-8" />
               </button>
 
-              <h2 className="text-white text-lg md:text-xl font-medium text-center mb-2 font-poppins">
+              <h2 className="text-white text-lg md:text-xl font-medium text-center mb-8 font-poppins mt-16">
                 Select your gender
               </h2>
               
               {/* Gender Selection Buttons */}
-              <div className="flex flex-col items-center space-y-6 mt-12">
+              <div className="flex flex-col items-center space-y-8 mt-16">
                 {/* Male Button */}
                 <button
                   onClick={() => handleGenderSelect('male')}
-                  className="w-80 h-20 flex items-center justify-center space-x-4 font-bold text-2xl uppercase tracking-wide transition-all duration-200 hover:scale-105 font-poppins"
+                  className="w-64 md:w-80 h-20 flex items-center justify-center space-x-4 font-bold text-2xl uppercase tracking-wide transition-all duration-200 hover:scale-105 font-poppins"
                   style={{
                     background: selectedGender === 'male' ? 'rgba(248, 255, 19, 0.14)' : '#4A4A4A',
                     border: selectedGender === 'male' ? '2px solid #F8FF13' : '2px solid transparent',
@@ -123,7 +123,7 @@ export default function GenderSelectionPage() {
                 {/* Female Button */}
                 <button
                   onClick={() => handleGenderSelect('female')}
-                  className="w-80 h-20 flex items-center justify-center space-x-4 font-bold text-2xl uppercase tracking-wide transition-all duration-200 hover:scale-105 font-poppins"
+                  className="w-64 md:w-80 h-20 flex items-center justify-center space-x-4 font-bold text-2xl uppercase tracking-wide transition-all duration-200 hover:scale-105 font-poppins"
                   style={{
                     background: selectedGender === 'female' ? 'rgba(248, 255, 19, 0.14)' : '#4A4A4A',
                     border: selectedGender === 'female' ? '2px solid #F8FF13' : '2px solid transparent',
@@ -139,7 +139,7 @@ export default function GenderSelectionPage() {
               </div>
 
               {/* Submit Button */}
-              <div className="mt-12 flex justify-center">
+              <div className="mt-16 flex justify-center">
                 <button 
                   onClick={handleContinue}
                   disabled={!selectedGender}
