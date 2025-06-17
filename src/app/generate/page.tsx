@@ -103,23 +103,23 @@ export default function GeneratePage() {
                 <img src="/images/icons/backbutton.png" alt="Back" className="w-8 h-8" />
               </button>
 
-              <h2 className="text-white text-sm md:text-lg lg:text-xl font-medium text-center mb-2 font-poppins">
+              <h2 className="text-white text-base md:text-lg lg:text-xl font-medium text-center mb-2 font-poppins">
                 Enter your details to create your
               </h2>
-              <h3 className="text-white text-sm md:text-lg lg:text-xl font-medium text-center mb-6 font-poppins">
+              <h3 className="text-white text-base md:text-lg lg:text-xl font-medium text-center mb-6 font-poppins">
                 star-studded photo
               </h3>
               
               <form onSubmit={handleSubmit} className="space-y-6 flex flex-col items-center">
                 {/* Name Input */}
-                <div className="w-3/4">
+                <div className="w-full md:w-3/4 px-2 md:px-0">
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
                     placeholder="Enter your name"
-                    className="w-full px-4 py-3 rounded-md outline-none text-white placeholder-gray-400 font-poppins"
+                    className="w-full px-4 py-3 rounded-md outline-none text-white placeholder-gray-400 font-poppins text-lg md:text-sm"
                     style={{
                       background: 'linear-gradient(180deg, rgba(40,40,40,0.9) 0%, rgba(20,20,20,0.9) 100%)',
                       backdropFilter: 'blur(10px)',
@@ -130,14 +130,14 @@ export default function GeneratePage() {
                 </div>
                 
                 {/* Email Input */}
-                <div className="w-3/4">
+                <div className="w-full md:w-3/4 px-2 md:px-0">
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="Enter your Email*"
-                    className="w-full px-4 py-3 rounded-md outline-none text-white placeholder-gray-400 font-poppins"
+                    className="w-full px-4 py-3 rounded-md outline-none text-white placeholder-gray-400 font-poppins text-lg md:text-sm"
                     style={{
                       background: 'linear-gradient(180deg, rgba(40,40,40,0.9) 0%, rgba(20,20,20,0.9) 100%)',
                       backdropFilter: 'blur(10px)',
@@ -148,14 +148,14 @@ export default function GeneratePage() {
                 </div>
                 
                 {/* Disclaimer Text */}
-                <p className="text-gray-400 text-xs md:text-xs text-center font-poppins">
+                <p className="text-gray-400 text-base md:text-xs text-center font-poppins px-2 md:px-0">
                   *Upon generation, your poster will be sent to<br />
                   the email address you provide. Please enter a<br />
                   valid email.
                 </p>
                 
                 {/* Submit Button */}
-                <div className="pt-4 w-3/4">
+                <div className="pt-4 w-full md:w-3/4 px-2 md:px-0">
                   <button 
                     type="submit"
                     className="w-full py-3 font-bold text-black text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105"
