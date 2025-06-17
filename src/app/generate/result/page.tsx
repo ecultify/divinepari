@@ -315,7 +315,7 @@ function ResultPageContent() {
                   
                   <button
                     onClick={handleTryAgain}
-                    className="px-16 py-3 font-bold text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200"
+                    className="px-16 py-3 font-normal text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200 font-poppins"
                     style={{
                       background: '#F8FF13',
                       color: 'black',
@@ -371,13 +371,13 @@ function ResultPageContent() {
             </div>
           </div>
           
-          {/* Step Progress Indicator - Larger with more gap on desktop */}
-          <div className="flex justify-center mb-4 md:mb-12">
+          {/* Step Progress Indicator - Original size on desktop */}
+          <div className="flex justify-center mb-4 md:mb-6">
             <div className="flex items-center">
               {[1, 2, 3, 4].map((step, index) => (
                 <div key={step} className="flex items-center">
                   <div 
-                    className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center font-bold font-poppins text-sm md:text-base"
+                    className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center font-bold font-poppins text-sm md:text-sm"
                     style={{
                       borderColor: '#F8FF13',
                       backgroundColor: '#F8FF13',
@@ -388,9 +388,9 @@ function ResultPageContent() {
                   </div>
                   {index < 3 && (
                     <>
-                      <div className="w-2 md:w-4"></div>
-                      <div className="w-8 md:w-16 h-0.5 bg-white"></div>
-                      <div className="w-2 md:w-4"></div>
+                      <div className="w-2 md:w-2"></div>
+                      <div className="w-8 md:w-8 h-0.5 bg-white"></div>
+                      <div className="w-2 md:w-2"></div>
                     </>
                   )}
                 </div>
@@ -445,7 +445,7 @@ function ResultPageContent() {
               <div className="mb-4 md:mb-6">
                 <button
                   onClick={handleDownload}
-                  className="px-6 py-2 md:px-8 md:py-3 font-bold text-base md:text-base uppercase tracking-wider transition-all duration-200 hover:scale-105"
+                  className="px-6 py-2 md:px-10 md:py-3 font-normal text-base md:text-lg uppercase tracking-wider transition-all duration-200 hover:scale-105 font-poppins"
                   style={{
                     background: '#F8FF13',
                     color: 'black',
@@ -464,7 +464,7 @@ function ResultPageContent() {
                 
                 <button
                   onClick={handleTryAgain}
-                  className="px-6 py-2 md:px-10 md:py-3 font-bold text-base md:text-lg uppercase tracking-wider transition-all duration-200 hover:scale-105"
+                  className="px-6 py-2 md:px-10 md:py-3 font-normal text-base md:text-lg uppercase tracking-wider transition-all duration-200 hover:scale-105 font-poppins"
                   style={{
                     background: '#F8FF13',
                     color: 'black',

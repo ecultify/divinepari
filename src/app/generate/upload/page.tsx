@@ -214,8 +214,8 @@ function UploadPhotoPageContent() {
         
         {/* Content Container */}
         <div className="relative z-10 w-full h-full flex flex-col px-4 md:px-6 py-6">
-          {/* Logo - Moved 50px right on desktop, centered on mobile */}
-          <div className="flex justify-center md:justify-start mb-8" style={{ marginLeft: '50px' }}>
+          {/* Logo - Centered on mobile, original position on desktop */}
+          <div className="flex justify-center md:justify-start mb-8">
             <button
               onClick={() => window.location.href = '/'}
               className="transition-all duration-200 hover:opacity-80"
@@ -228,13 +228,13 @@ function UploadPhotoPageContent() {
             </button>
           </div>
           
-          {/* Step Progress Indicator - Larger with more gap on desktop */}
-          <div className="flex justify-center mb-4 md:mb-12">
+          {/* Step Progress Indicator - Original size on desktop */}
+          <div className="flex justify-center mb-4 md:mb-6">
             <div className="flex items-center">
               {[1, 2, 3, 4].map((step, index) => (
                 <div key={step} className="flex items-center">
                   <div 
-                    className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center font-bold font-poppins text-sm md:text-base"
+                    className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center font-bold font-poppins text-sm md:text-sm"
                     style={{
                       borderColor: (step === 1 || step === 2 || step === 3) ? '#F8FF13' : 'white',
                       backgroundColor: (step === 1 || step === 2 || step === 3) ? '#F8FF13' : 'transparent',
@@ -245,9 +245,9 @@ function UploadPhotoPageContent() {
                   </div>
                   {index < 3 && (
                     <>
-                      <div className="w-2 md:w-4"></div>
-                      <div className="w-8 md:w-16 h-0.5 bg-white"></div>
-                      <div className="w-2 md:w-4"></div>
+                      <div className="w-2 md:w-2"></div>
+                      <div className="w-8 md:w-8 h-0.5 bg-white"></div>
+                      <div className="w-2 md:w-2"></div>
                     </>
                   )}
                 </div>
@@ -268,7 +268,7 @@ function UploadPhotoPageContent() {
             >
               {/* Back Button */}
               <button
-                onClick={() => window.history.back()}
+                onClick={() => window.location.href = `/generate/poster?gender=${gender}`}
                 className="absolute top-4 left-4 transition-all duration-200 hover:opacity-75"
               >
                 <img src="/images/icons/backbutton.png" alt="Back" className="w-8 h-8" />
@@ -324,7 +324,7 @@ function UploadPhotoPageContent() {
                 <button 
                   onClick={handleSubmit}
                   disabled={!uploadedImage || loading}
-                  className="px-16 py-3 font-bold text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200"
+                  className="px-16 py-3 font-normal text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200 font-poppins"
                   style={{
                     background: (uploadedImage && !loading) ? '#F8FF13' : '#585858',
                     color: (uploadedImage && !loading) ? 'black' : 'black',

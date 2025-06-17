@@ -43,29 +43,27 @@ export default function GeneratePage() {
         
         {/* Content Container */}
         <div className="relative z-10 w-full h-full flex flex-col px-4 md:px-6 py-6">
-          {/* Logo - Centered on mobile, moved right on desktop */}
+          {/* Logo - Centered on mobile, original position on desktop */}
           <div className="flex justify-center md:justify-start mb-8">
-            <div className="md:ml-12">
-              <button
-                onClick={() => window.location.href = '/'}
-                className="transition-all duration-200 hover:opacity-80"
-              >
-                <img 
-                  src="/images/landing/normalimages/parimatch.svg" 
-                  alt="Parimatch Logo" 
-                  className="h-16 md:h-16"
-                />
-              </button>
-            </div>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="transition-all duration-200 hover:opacity-80"
+            >
+              <img 
+                src="/images/landing/normalimages/parimatch.svg" 
+                alt="Parimatch Logo" 
+                className="h-16 md:h-16"
+              />
+            </button>
           </div>
           
-          {/* Step Progress Indicator - Larger with more gap on desktop */}
-          <div className="flex justify-center mb-4 md:mb-12">
+          {/* Step Progress Indicator - Original size on desktop */}
+          <div className="flex justify-center mb-4 md:mb-6">
             <div className="flex items-center">
               {[1, 2, 3, 4].map((step, index) => (
                 <div key={step} className="flex items-center">
                   <div 
-                    className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center font-bold font-poppins text-sm md:text-base"
+                    className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center font-bold font-poppins text-sm md:text-sm"
                     style={{
                       borderColor: step === 1 ? '#F8FF13' : 'white',
                       backgroundColor: step === 1 ? '#F8FF13' : 'transparent',
@@ -76,9 +74,9 @@ export default function GeneratePage() {
                   </div>
                   {index < 3 && (
                     <>
-                      <div className="w-2 md:w-4"></div>
-                      <div className="w-8 md:w-16 h-0.5 bg-white"></div>
-                      <div className="w-2 md:w-4"></div>
+                      <div className="w-2 md:w-2"></div>
+                      <div className="w-8 md:w-8 h-0.5 bg-white"></div>
+                      <div className="w-2 md:w-2"></div>
                     </>
                   )}
                 </div>
@@ -97,15 +95,9 @@ export default function GeneratePage() {
                 backgroundClip: 'padding-box, border-box',
               }}
             >
-              {/* Back Button - Hidden on mobile */}
-              <button
-                onClick={() => window.location.href = '/'}
-                className="absolute top-4 left-4 transition-all duration-200 hover:opacity-75 hidden md:block"
-              >
-                <img src="/images/icons/backbutton.png" alt="Back" className="w-8 h-8" />
-              </button>
 
-              <h2 className="text-white text-lg md:text-lg lg:text-xl font-medium text-center mb-8 font-poppins">
+
+              <h2 className="text-white text-lg md:text-xl font-medium text-center mb-2 md:mb-8 font-poppins">
                 Enter your details to create your star-studded photo
               </h2>
               
@@ -155,7 +147,7 @@ export default function GeneratePage() {
                 <div className="pt-4 w-full md:w-3/4 px-2 md:px-0">
                   <button 
                     type="submit"
-                    className="w-full py-3 font-bold text-black text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105"
+                    className="w-full py-3 font-normal text-black text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105 font-poppins"
                     style={{
                       background: '#F8FF13',
                       border: '0.5px solid transparent',

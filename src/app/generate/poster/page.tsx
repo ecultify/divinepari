@@ -51,29 +51,27 @@ function PosterSelectionPageContent() {
         
         {/* Content Container */}
         <div className="relative z-10 w-full max-w-md md:max-w-none mx-auto flex flex-col px-4 md:px-6 py-6">
-          {/* Logo - Moved 50px right on desktop, centered on mobile */}
+          {/* Logo - Centered on mobile, original position on desktop */}
           <div className="flex justify-center md:justify-start mb-8 w-full">
-            <div className="md:ml-12">
-              <button
-                onClick={() => window.location.href = '/'}
-                className="transition-all duration-200 hover:opacity-80"
-              >
-                <img 
-                  src="/images/landing/normalimages/parimatch.svg" 
-                  alt="Parimatch Logo" 
-                  className="h-16 md:h-16"
-                />
-              </button>
-            </div>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="transition-all duration-200 hover:opacity-80"
+            >
+              <img 
+                src="/images/landing/normalimages/parimatch.svg" 
+                alt="Parimatch Logo" 
+                className="h-16 md:h-16"
+              />
+            </button>
           </div>
           
-          {/* Step Progress Indicator - Larger with more gap on desktop */}
-          <div className="flex justify-center mb-4 md:mb-12">
+          {/* Step Progress Indicator - Original size on desktop */}
+          <div className="flex justify-center mb-4 md:mb-6">
             <div className="flex items-center">
               {[1, 2, 3, 4].map((step, index) => (
                 <div key={step} className="flex items-center">
                   <div 
-                    className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center font-bold font-poppins text-sm md:text-base"
+                    className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center font-bold font-poppins text-sm md:text-sm"
                     style={{
                       borderColor: (step === 1 || step === 2) ? '#F8FF13' : 'white',
                       backgroundColor: (step === 1 || step === 2) ? '#F8FF13' : 'transparent',
@@ -84,9 +82,9 @@ function PosterSelectionPageContent() {
                   </div>
                   {index < 3 && (
                     <>
-                      <div className="w-2 md:w-4"></div>
-                      <div className="w-8 md:w-16 h-0.5 bg-white"></div>
-                      <div className="w-2 md:w-4"></div>
+                      <div className="w-2 md:w-2"></div>
+                      <div className="w-8 md:w-8 h-0.5 bg-white"></div>
+                      <div className="w-2 md:w-2"></div>
                     </>
                   )}
                 </div>
@@ -107,7 +105,7 @@ function PosterSelectionPageContent() {
             >
               {/* Back Button */}
               <button
-                onClick={() => window.history.back()}
+                onClick={() => window.location.href = '/generate/gender'}
                 className="absolute top-4 left-4 transition-all duration-200 hover:opacity-75"
               >
                 <img src="/images/icons/backbutton.png" alt="Back" className="w-8 h-8" />
@@ -144,7 +142,7 @@ function PosterSelectionPageContent() {
                 <button 
                   onClick={handleContinue}
                   disabled={!selectedPoster}
-                  className="px-16 py-3 font-bold text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200"
+                  className="px-16 py-3 font-normal text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200 font-poppins"
                   style={{
                     background: selectedPoster ? '#F8FF13' : '#585858',
                     color: selectedPoster ? 'black' : 'black',

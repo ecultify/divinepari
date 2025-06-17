@@ -219,7 +219,7 @@ export default function HomePage() {
           <div className="mb-8 md:mb-10" style={{ marginTop: '62px' }}>
             <button 
               onClick={() => window.location.href = '/generate'}
-              className="relative px-8 md:px-12 py-3 md:py-4 font-bold text-black text-lg md:text-xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105"
+              className="relative px-8 md:px-12 py-3 md:py-4 font-normal text-black text-lg md:text-xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105"
               style={{
                 background: '#F8FF13',
                 border: '0.5px solid transparent',
