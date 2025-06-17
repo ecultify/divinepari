@@ -355,18 +355,20 @@ function ResultPageContent() {
         />
         
         <div className="relative z-10 w-full h-full flex flex-col px-4 md:px-6 py-6">
-          {/* Logo - Moved 50px right on desktop, centered on mobile */}
-          <div className="flex justify-center md:justify-start mb-8" style={{ marginLeft: '50px' }}>
-            <button
-              onClick={() => window.location.href = '/'}
-              className="transition-all duration-200 hover:opacity-80"
-            >
-              <img 
-                src="/images/landing/normalimages/parimatch.svg" 
-                alt="Parimatch Logo" 
-                className="h-16 md:h-16"
-              />
-            </button>
+          {/* Logo - Centered on mobile, moved right on desktop */}
+          <div className="flex justify-center md:justify-start mb-8">
+            <div className="md:ml-12">
+              <button
+                onClick={() => window.location.href = '/'}
+                className="transition-all duration-200 hover:opacity-80"
+              >
+                <img 
+                  src="/images/landing/normalimages/parimatch.svg" 
+                  alt="Parimatch Logo" 
+                  className="h-16 md:h-16"
+                />
+              </button>
+            </div>
           </div>
           
           {/* Step Progress Indicator - Larger with more gap on desktop */}
@@ -397,9 +399,9 @@ function ResultPageContent() {
           </div>
 
           {/* Layout - Vertical on mobile, 2-column on desktop */}
-          <div className="flex-1 flex flex-col lg:grid lg:grid-cols-2 gap-6 pl-4 pr-4 lg:pl-8 lg:pr-8 items-center">
+          <div className="flex-1 flex flex-col lg:grid lg:grid-cols-2 gap-6 items-center max-w-sm md:max-w-none mx-auto lg:mx-0 lg:pl-8 lg:pr-8">
             {/* Generated Poster */}
-            <div className="flex justify-center lg:justify-end" style={{ transform: 'translateX(-100px)' }}>
+            <div className="flex justify-center lg:justify-end lg:transform lg:translate-x-[-100px]">
               <div 
                 className="relative rounded-lg overflow-hidden"
                 style={{
@@ -419,7 +421,7 @@ function ResultPageContent() {
             </div>
 
             {/* Content - Centered on mobile */}
-            <div className="flex flex-col justify-center text-center lg:text-center lg:pl-4" style={{ transform: 'translateX(-80px)' }}>
+            <div className="flex flex-col justify-center text-center lg:text-center lg:pl-4 lg:transform lg:translate-x-[-80px]">
               {/* Main Title */}
               <h1 className="text-white text-base md:text-xl lg:text-2xl font-bold mb-3 md:mb-4 font-poppins">
                 HERE'S YOUR PERSONALIZED<br />
