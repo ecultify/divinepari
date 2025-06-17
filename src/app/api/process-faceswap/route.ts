@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
 
 // Segmind API Configuration
 const SEGMIND_URL = 'https://api.segmind.com/v1/faceswap-v3';
@@ -44,6 +46,7 @@ export async function POST(request: NextRequest) {
     const gender = formData.get('gender') as string;
 
     console.log('Request parameters:', { posterName, gender, userImageExists: !!userImageFile });
+    console.log('Working directory:', process.cwd());
 
     if (!userImageFile || !posterName || !gender) {
       return NextResponse.json(
@@ -56,20 +59,28 @@ export async function POST(request: NextRequest) {
     const userImageBuffer = Buffer.from(await userImageFile.arrayBuffer());
     console.log('User image size:', userImageBuffer.length);
 
-    // Get poster path and read poster image
-    const posterPath = `/images/posters/${posterName}`;
-    const posterUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}${posterPath}`;
+    // Get poster path and read poster image from file system
+    const posterPath = path.join(process.cwd(), 'public', 'images', 'posters', posterName);
+    console.log('Looking for poster at:', posterPath);
     
     let posterBuffer: Buffer;
     try {
-      const posterResponse = await fetch(posterUrl);
-      if (!posterResponse.ok) {
-        throw new Error(`Poster not found: ${posterName}`);
+      // Check if file exists
+      if (!fs.existsSync(posterPath)) {
+        console.error(`Poster file not found at: ${posterPath}`);
+        // List available files for debugging
+        const postersDir = path.join(process.cwd(), 'public', 'images', 'posters');
+        if (fs.existsSync(postersDir)) {
+          const availableFiles = fs.readdirSync(postersDir);
+          console.log('Available poster files:', availableFiles);
+        }
+        throw new Error(`Poster file not found: ${posterName}`);
       }
-      posterBuffer = Buffer.from(await posterResponse.arrayBuffer());
-      console.log('Poster image size:', posterBuffer.length);
+      
+      posterBuffer = fs.readFileSync(posterPath);
+      console.log('Poster image loaded from file system, size:', posterBuffer.length);
     } catch (error) {
-      console.error('Error loading poster:', error);
+      console.error('Error loading poster from file system:', error);
       return NextResponse.json(
         { success: false, error: 'Poster not found' },
         { status: 404 }
