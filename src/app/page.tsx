@@ -366,11 +366,19 @@ export default function HomePage() {
         <div className="relative z-10 w-full h-full flex flex-col items-center px-4 md:px-6 py-12 md:py-16">
           
           {/* Gallery Title - with extra spacing from overflowing content */}
-          <div className="text-center mb-8 md:mb-10 mt-80 md:mt-40">
+          <div className="text-center mb-8 md:mb-10 gallery-title-container" style={{ marginTop: '456px' }}>
             <h2 className="font-poppins text-white text-2xl md:text-3xl lg:text-4xl font-bold">
               GALLERY
             </h2>
           </div>
+          
+          <style jsx>{`
+            @media (min-width: 768px) {
+              .gallery-title-container {
+                margin-top: 160px !important;
+              }
+            }
+          `}</style>
           
           {/* 3-Column Poster Grid - Desktop Row, Mobile Carousel */}
           <div className="w-full max-w-5xl">
