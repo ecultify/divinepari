@@ -293,7 +293,7 @@ export default function HomePage() {
           </div>
           
           {/* Desktop Layout - Two Column Grid - Shirts and How It Works - Absolute positioned to overlap section 3 */}
-          <div className="absolute hidden md:grid w-full max-w-4xl lg:max-w-5xl mx-auto grid-cols-1 lg:grid-cols-5 gap-6 md:gap-8 items-center" style={{ top: '65%', left: '50%', transform: 'translateX(-50%)', zIndex: 10000 }}>
+          <div className="absolute hidden md:grid w-full max-w-4xl lg:max-w-5xl mx-auto grid-cols-1 lg:grid-cols-5 gap-6 md:gap-8 items-center" style={{ top: 'calc(65% + 55px)', left: '50%', transform: 'translateX(-50%)', zIndex: 10000 }}>
             
             {/* Left Column - Shirts Image (3/5 width) */}
             <div className="lg:col-span-3 flex justify-center relative" style={{ zIndex: 10001 }}>
@@ -366,7 +366,7 @@ export default function HomePage() {
         <div className="relative z-10 w-full h-full flex flex-col items-center px-4 md:px-6 py-12 md:py-16">
           
           {/* Gallery Title - with extra spacing from overflowing content */}
-          <div className="text-center mb-8 md:mb-10" style={{ marginTop: '456px' }}>
+          <div className="text-center mb-8 md:mb-10 mt-80 md:mt-40">
             <h2 className="font-poppins text-white text-2xl md:text-3xl lg:text-4xl font-bold">
               GALLERY
             </h2>
