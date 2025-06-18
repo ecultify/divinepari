@@ -2,7 +2,7 @@
 
 export default function HomePage() {
   return (
-    <div className="w-full">
+    <div className="w-full bg-black">
       {/* Section 1 */}
       <section 
         className="relative w-full bg-no-repeat bg-center"

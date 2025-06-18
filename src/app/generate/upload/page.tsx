@@ -6,6 +6,8 @@ function UploadPhotoPageContent() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showInstructionsModal, setShowInstructionsModal] = useState(true);
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -26,6 +28,7 @@ function UploadPhotoPageContent() {
       const reader = new FileReader();
       reader.onload = (e) => {
         setUploadedImage(e.target?.result as string);
+        setShowPreviewModal(true);
       };
       reader.readAsDataURL(file);
     }
@@ -203,14 +206,7 @@ function UploadPhotoPageContent() {
           backgroundSize: 'cover',
         }}
       >
-        {/* Mobile Background Override */}
-        <div 
-          className="absolute inset-0 block md:hidden bg-no-repeat bg-center"
-          style={{
-            backgroundImage: `url('/images/mobile/mobile.png')`,
-            backgroundSize: 'cover',
-          }}
-        />
+
         
         {/* Content Container */}
         <div className="relative z-10 w-full h-full flex flex-col px-4 md:px-6 py-6">
@@ -258,7 +254,7 @@ function UploadPhotoPageContent() {
           {/* Form Container */}
           <div className="flex justify-center items-center flex-1">
             <div 
-              className="w-full max-w-2xl px-12 py-8 rounded-lg relative"
+              className="w-full max-w-6xl px-12 py-8 rounded-lg relative"
               style={{
                 border: '2px solid transparent',
                 backgroundImage: 'linear-gradient(#111112, #111112), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
@@ -274,75 +270,74 @@ function UploadPhotoPageContent() {
                 <img src="/images/icons/backbutton.png" alt="Back" className="w-8 h-8" />
               </button>
 
-              <h2 className="text-white text-lg md:text-xl font-medium text-center mb-6 font-poppins">
+              <h2 className="text-white text-xl md:text-2xl font-medium text-center mb-8 font-poppins">
                 Upload Your Photo
               </h2>
               
               {/* Upload Area - Vertical on mobile, horizontal on desktop */}
-              <div className="flex flex-col md:flex-row items-center justify-center space-y-6 md:space-y-0 md:space-x-6 mb-8">
-                {/* Preview Area */}
-                <div>
-                  {uploadedImage ? (
-                    <div className="w-48 h-48 bg-gray-300 rounded-lg overflow-hidden">
+              <div className="flex flex-col md:flex-row items-center justify-center space-y-8 md:space-y-0 md:space-x-12 mb-12">
+                
+                {/* Desktop Left Side - Instructions and Wrong/Right Images */}
+                <div className="hidden md:flex items-center space-x-8">
+                  {/* Instructions Image */}
+                  <div className="flex items-center">
+                    <img 
+                      src="/images/uploadpage/instructions.png" 
+                      alt="Instructions" 
+                      className="h-36 w-auto object-contain"
+                    />
+                  </div>
+                  
+                  {/* Wrong and Right Images Vertically Stacked */}
+                  <div className="flex flex-col space-y-4">
+                    <div className="flex items-center justify-center">
                       <img 
-                        src={uploadedImage} 
-                        alt="Uploaded preview" 
-                        className="w-full h-full object-cover"
+                        src="/images/uploadpage/wrong.png" 
+                        alt="Wrong example" 
+                        className="h-32 w-auto object-contain"
                       />
                     </div>
-                  ) : (
-                    <div className="w-48 h-48 bg-gray-300 rounded-lg"></div>
-                  )}
+                    <div className="flex items-center justify-center">
+                      <img 
+                        src="/images/uploadpage/right.png" 
+                        alt="Right example" 
+                        className="h-32 w-auto object-contain"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Upload Zone */}
-                <div>
-                  <div
-                    className="w-48 h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all duration-200"
-                    style={{
-                      borderColor: dragActive ? '#F8FF13' : '#666666',
-                      backgroundColor: dragActive ? 'rgba(248, 255, 19, 0.1)' : 'transparent',
-                    }}
-                    onDrop={handleDrop}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragActive(true);
-                    }}
-                    onDragLeave={() => setDragActive(false)}
-                    onClick={() => setShowModal(true)}
-                  >
-                    <div className="flex flex-col items-center space-y-2">
-                      <img src="/images/icons/upload.png" alt="Upload" className="w-8 h-8" />
-                      <div className="text-white text-sm font-poppins">Upload your image</div>
+                {/* Upload Section */}
+                <div className="flex justify-center items-center">
+                  {/* Upload Zone */}
+                  <div>
+                    <div
+                      className="w-64 h-64 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all duration-200"
+                      style={{
+                        borderColor: dragActive ? '#F8FF13' : '#666666',
+                        backgroundColor: dragActive ? 'rgba(248, 255, 19, 0.1)' : 'transparent',
+                      }}
+                      onDrop={handleDrop}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDragActive(true);
+                      }}
+                      onDragLeave={() => setDragActive(false)}
+                      onClick={() => setShowModal(true)}
+                    >
+                      <div className="flex flex-col items-center space-y-4">
+                        <img src="/images/icons/upload.png" alt="Upload" className="w-12 h-12" />
+                        <div className="text-white text-base font-poppins text-center">
+                          Upload your image<br />
+                          <span className="text-sm text-gray-400">Click or drag & drop</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Submit Button */}
-              <div className="flex justify-center">
-                <button 
-                  onClick={handleSubmit}
-                  disabled={!uploadedImage || loading}
-                  className="px-16 py-3 font-normal text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200 font-poppins"
-                  style={{
-                    background: (uploadedImage && !loading) ? '#F8FF13' : '#585858',
-                    color: (uploadedImage && !loading) ? 'black' : 'black',
-                    border: (uploadedImage && !loading) ? '0.5px solid transparent' : 'none',
-                    backgroundImage: (uploadedImage && !loading)
-                      ? 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)'
-                      : 'none',
-                    backgroundOrigin: (uploadedImage && !loading) ? 'border-box' : 'initial',
-                    backgroundClip: (uploadedImage && !loading) ? 'padding-box, border-box' : 'initial',
-                    cursor: (uploadedImage && !loading) ? 'pointer' : 'not-allowed',
-                    opacity: (uploadedImage && !loading) ? 1 : 0.7,
-                  }}
-                >
-                  <span className="block transform skew-x-12">
-                    {loading ? 'PROCESSING...' : 'SUBMIT'}
-                  </span>
-                </button>
-              </div>
+
             </div>
           </div>
         </div>
@@ -406,11 +401,100 @@ function UploadPhotoPageContent() {
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
+                  </div>
+        )}
+
+        {/* Preview Modal */}
+        {showPreviewModal && uploadedImage && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div 
+              className="relative rounded-lg p-8 w-96 md:w-auto max-w-2xl"
+              style={{ 
+                backgroundColor: '#111112',
+                border: '0.5px solid #F8FF13'
+              }}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => {
+                  setShowPreviewModal(false);
+                  setUploadedImage(null);
+                }}
+                className="absolute top-3 right-3 text-white hover:text-gray-300 text-xl font-bold"
+              >
+                ×
+              </button>
+
+              {/* Modal content */}
+              <div className="flex flex-col items-center space-y-6 py-4">
+                {/* Title */}
+                <h3 className="text-white text-xl font-medium font-poppins text-center">
+                  Preview Your Photo
+                </h3>
+
+                {/* Preview Image */}
+                <div className="w-80 h-80 bg-gray-300 rounded-lg overflow-hidden">
+                  <img 
+                    src={uploadedImage} 
+                    alt="Photo preview" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
+                  {/* Retake Button */}
+                  <button
+                    onClick={() => {
+                      setShowPreviewModal(false);
+                      setUploadedImage(null);
+                    }}
+                    className="px-8 py-3 font-normal text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200 font-poppins"
+                    style={{
+                      background: '#666666',
+                      color: 'white',
+                      border: '0.5px solid transparent',
+                      backgroundImage: 'linear-gradient(#666666, #666666), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                      backgroundOrigin: 'border-box',
+                      backgroundClip: 'padding-box, border-box',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span className="block transform skew-x-12">
+                      RETAKE PHOTO
+                    </span>
+                  </button>
+
+                  {/* Submit Button */}
+                  <button 
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className="px-12 py-3 font-normal text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200 font-poppins"
+                    style={{
+                      background: loading ? '#585858' : '#F8FF13',
+                      color: 'black',
+                      border: loading ? 'none' : '0.5px solid transparent',
+                      backgroundImage: loading 
+                        ? 'none'
+                        : 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                      backgroundOrigin: loading ? 'initial' : 'border-box',
+                      backgroundClip: loading ? 'initial' : 'padding-box, border-box',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      opacity: loading ? 0.7 : 1,
+                    }}
+                  >
+                    <span className="block transform skew-x-12">
+                      {loading ? 'PROCESSING...' : 'SUBMIT'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
 export default function UploadPhotoPage() {
   return (
