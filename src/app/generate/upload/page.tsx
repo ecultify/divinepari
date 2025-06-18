@@ -254,7 +254,7 @@ function UploadPhotoPageContent() {
           {/* Form Container */}
           <div className="flex justify-center items-center flex-1">
             <div 
-              className="w-full max-w-6xl px-12 py-8 rounded-lg relative"
+              className="w-full max-w-4xl px-12 py-8 rounded-lg relative"
               style={{
                 border: '2px solid transparent',
                 backgroundImage: 'linear-gradient(#111112, #111112), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
