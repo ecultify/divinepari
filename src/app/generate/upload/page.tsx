@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { trackUserStep, trackGenerationResult } from '../../../lib/supabase';
 
 function UploadPhotoPageContent() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -9,6 +10,7 @@ function UploadPhotoPageContent() {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showInstructionsModal, setShowInstructionsModal] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string>('');
   const searchParams = useSearchParams();
   const router = useRouter();
   
@@ -20,15 +22,46 @@ function UploadPhotoPageContent() {
     // If missing required data, redirect back to start
     if (!gender || !selectedPoster) {
       router.push('/generate/gender');
+      return;
     }
+
+    // Initialize session tracking
+    const initSession = async () => {
+      const currentSessionId = localStorage.getItem('sessionId') || '';
+      setSessionId(currentSessionId);
+      
+      if (currentSessionId) {
+        // Track that user reached photo upload
+        await trackUserStep(currentSessionId, 'photo_upload', {
+          page: 'photo_upload',
+          gender: gender,
+          selected_poster: selectedPoster,
+          timestamp: new Date().toISOString()
+        });
+      }
+    };
+    
+    initSession();
   }, [gender, selectedPoster, router]);
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         setUploadedImage(e.target?.result as string);
         setShowPreviewModal(true);
+        
+        // Track photo upload
+        if (sessionId) {
+          await trackUserStep(sessionId, 'photo_upload', {
+            action: 'photo_uploaded',
+            file_type: file.type,
+            file_size: file.size,
+            gender: gender,
+            selected_poster: selectedPoster,
+            timestamp: new Date().toISOString()
+          });
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -51,10 +84,26 @@ function UploadPhotoPageContent() {
   };
 
   const handleSubmit = async () => {
-    if (uploadedImage && selectedPoster && gender) {
+    if (uploadedImage && selectedPoster && gender && sessionId) {
       setLoading(true);
       
       try {
+        // Track generation start
+        await trackGenerationResult(sessionId, {
+          gender: gender,
+          poster_selected: selectedPoster,
+          user_image_uploaded: true,
+          processing_status: 'started',
+          result_image_generated: false
+        });
+
+        await trackUserStep(sessionId, 'processing', {
+          action: 'generation_started',
+          gender: gender,
+          selected_poster: selectedPoster,
+          timestamp: new Date().toISOString()
+        });
+        
         // Store the user image in localStorage for the next page
         localStorage.setItem('userImage', uploadedImage);
         localStorage.setItem('selectedPoster', selectedPoster);
@@ -64,6 +113,16 @@ function UploadPhotoPageContent() {
         router.push(`/generate/result?gender=${gender}&poster=${encodeURIComponent(selectedPoster)}`);
       } catch (error) {
         console.error('Error processing:', error);
+        
+        // Track error
+        if (sessionId) {
+          await trackUserStep(sessionId, 'error', {
+            error_type: 'submit_error',
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+            timestamp: new Date().toISOString()
+          });
+        }
+        
         setLoading(false);
       }
     }

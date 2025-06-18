@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { trackUserStep, updateGenerationResult } from '../../../lib/supabase';
 
 function ResultPageContent() {
   const [loading, setLoading] = useState(true);
@@ -8,6 +9,7 @@ function ResultPageContent() {
   const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [userImage, setUserImage] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [sessionId, setSessionId] = useState<string>('');
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -20,17 +22,30 @@ function ResultPageContent() {
     const storedUserImage = localStorage.getItem('userImage');
     const storedPoster = localStorage.getItem('selectedPoster');
     const storedGender = localStorage.getItem('selectedGender');
+    const currentSessionId = localStorage.getItem('sessionId') || '';
 
     if (!storedUserImage || !storedPoster || !storedGender) {
       router.push('/generate/gender');
       return;
     }
 
+    setSessionId(currentSessionId);
     setUserImage(storedUserImage);
-    processFaceSwap(storedUserImage, storedPoster, storedGender);
+    
+    // Track result page visit
+    if (currentSessionId) {
+      trackUserStep(currentSessionId, 'result_generated', {
+        page: 'result_page',
+        gender: storedGender,
+        selected_poster: storedPoster,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    processFaceSwap(storedUserImage, storedPoster, storedGender, currentSessionId);
   }, [router]);
 
-  const processFaceSwap = async (userImage: string, posterName: string, gender: string) => {
+  const processFaceSwap = async (userImage: string, posterName: string, gender: string, sessionId: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -80,6 +95,20 @@ function ResultPageContent() {
         setProcessedImage(result.imageUrl);
         setProgress(100);
         console.log('Face swap completed successfully');
+        
+        // Track successful generation
+        if (sessionId) {
+          await updateGenerationResult(sessionId, {
+            processing_status: 'completed',
+            result_image_generated: true
+          });
+          
+          await trackUserStep(sessionId, 'result_generated', {
+            action: 'generation_completed',
+            success: true,
+            timestamp: new Date().toISOString()
+          });
+        }
       } else {
         throw new Error(result.error || 'Processing failed - no image returned');
       }
@@ -103,6 +132,20 @@ function ResultPageContent() {
       }
       
       setError(errorMessage);
+      
+      // Track error
+      if (sessionId) {
+        await updateGenerationResult(sessionId, {
+          processing_status: 'failed',
+          error_message: errorMessage
+        });
+        
+        await trackUserStep(sessionId, 'error', {
+          error_type: 'face_swap_error',
+          error_message: errorMessage,
+          timestamp: new Date().toISOString()
+        });
+      }
     } finally {
       setLoading(false);
     }

@@ -1,16 +1,62 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { generateSessionId, trackUserSession, trackUserStep } from '../../../lib/supabase';
 
 export default function GenderSelectionPage() {
   const [selectedGender, setSelectedGender] = useState<'male' | 'female' | null>(null);
+  const [sessionId, setSessionId] = useState<string>('');
 
-  const handleGenderSelect = (gender: 'male' | 'female') => {
+  // Initialize session when component mounts
+  useEffect(() => {
+    const initSession = async () => {
+      let currentSessionId = localStorage.getItem('sessionId');
+      
+      if (!currentSessionId) {
+        currentSessionId = generateSessionId();
+        localStorage.setItem('sessionId', currentSessionId);
+        await trackUserSession(currentSessionId);
+      }
+      
+      setSessionId(currentSessionId);
+      
+      // Track that user reached gender selection
+      await trackUserStep(currentSessionId, 'gender_selection', {
+        page: 'gender_selection',
+        timestamp: new Date().toISOString()
+      });
+    };
+    
+    initSession();
+  }, []);
+
+  const handleGenderSelect = async (gender: 'male' | 'female') => {
     setSelectedGender(gender);
+    
+    // Track gender selection
+    if (sessionId) {
+      await trackUserStep(sessionId, 'gender_selection', {
+        selected_gender: gender,
+        action: 'gender_selected',
+        timestamp: new Date().toISOString()
+      });
+    }
   };
 
-  const handleContinue = () => {
-    if (selectedGender) {
+  const handleContinue = async () => {
+    if (selectedGender && sessionId) {
       console.log('Selected gender:', selectedGender);
+      
+      // Track final gender submission
+      await trackUserStep(sessionId, 'gender_selection', {
+        selected_gender: selectedGender,
+        action: 'submit_gender',
+        next_page: 'poster_selection',
+        timestamp: new Date().toISOString()
+      });
+      
+      // Store in localStorage for next page
+      localStorage.setItem('selectedGender', selectedGender);
+      
       // Navigate to poster selection page with gender parameter
       window.location.href = `/generate/poster?gender=${selectedGender}`;
     }

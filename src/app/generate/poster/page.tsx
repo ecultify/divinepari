@@ -1,30 +1,72 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { trackUserStep } from '../../../lib/supabase';
 
 function PosterSelectionPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const gender = searchParams.get('gender');
   const [selectedPoster, setSelectedPoster] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string>('');
 
   useEffect(() => {
     // If no gender specified, redirect back to gender selection
     if (!gender) {
       router.push('/generate/gender');
+      return;
     }
+
+    // Initialize session tracking
+    const initSession = async () => {
+      const currentSessionId = localStorage.getItem('sessionId') || '';
+      setSessionId(currentSessionId);
+      
+      if (currentSessionId) {
+        // Track that user reached poster selection
+        await trackUserStep(currentSessionId, 'poster_selection', {
+          page: 'poster_selection',
+          gender: gender,
+          timestamp: new Date().toISOString()
+        });
+      }
+    };
+    
+    initSession();
   }, [gender, router]);
 
   const posters = gender === 'male' 
     ? ['Option 1M.jpg', 'Option 2M.jpg', 'Option 3M.jpg']
     : ['Option 1F.jpg', 'Option 2F.jpg', 'Option 3F.jpg'];
 
-  const handlePosterSelect = (poster: string) => {
+  const handlePosterSelect = async (poster: string) => {
     setSelectedPoster(poster);
+    
+    // Track poster selection
+    if (sessionId) {
+      await trackUserStep(sessionId, 'poster_selection', {
+        selected_poster: poster,
+        gender: gender,
+        action: 'poster_selected',
+        timestamp: new Date().toISOString()
+      });
+    }
   };
 
-  const handleContinue = () => {
-    if (selectedPoster && gender) {
+  const handleContinue = async () => {
+    if (selectedPoster && gender && sessionId) {
+      // Track final poster submission
+      await trackUserStep(sessionId, 'poster_selection', {
+        selected_poster: selectedPoster,
+        gender: gender,
+        action: 'submit_poster',
+        next_page: 'photo_upload',
+        timestamp: new Date().toISOString()
+      });
+      
+      // Store in localStorage for next page
+      localStorage.setItem('selectedPoster', selectedPoster);
+      
       // Navigate to upload page with both gender and poster data
       router.push(`/generate/upload?gender=${gender}&poster=${encodeURIComponent(selectedPoster)}`);
     }
