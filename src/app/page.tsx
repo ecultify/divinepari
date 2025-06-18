@@ -97,14 +97,14 @@ export default function HomePage() {
             height: '120px',
           }}
         >
-          <div className="text-white text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl font-medium mb-2 font-poppins">
+          <div className="text-white text-sm md:text-base font-medium mb-2 font-poppins">
             scroll down to see more
           </div>
           <div className="mb-2">
             <img 
               src="/images/icons/downward.png" 
               alt="Scroll down" 
-              className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 2xl:w-14 2xl:h-14"
+              className="w-6 h-6 md:w-8 md:h-8"
             />
           </div>
         </div>
