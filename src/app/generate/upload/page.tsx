@@ -404,6 +404,73 @@ function UploadPhotoPageContent() {
                   </div>
         )}
 
+        {/* Mobile Instructions Modal - Shows on first visit */}
+        {showInstructionsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 md:hidden">
+            <div 
+              className="relative rounded-lg p-6 w-80 max-w-sm mx-4"
+              style={{ 
+                backgroundColor: '#111112',
+                border: '0.5px solid #F8FF13'
+              }}
+            >
+              {/* Modal content */}
+              <div className="flex flex-col items-center space-y-6 py-4">
+                {/* Title */}
+                <h3 className="text-white text-lg font-medium font-poppins text-center">
+                  Photo Guidelines
+                </h3>
+
+                {/* Wrong and Right Images Vertically Stacked */}
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-center">
+                    <img 
+                      src="/images/uploadpage/wrong.png" 
+                      alt="Wrong example" 
+                      className="h-24 w-auto object-contain"
+                    />
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <img 
+                      src="/images/uploadpage/right.png" 
+                      alt="Right example" 
+                      className="h-24 w-auto object-contain"
+                    />
+                  </div>
+                </div>
+
+                {/* Instructions Image Below */}
+                <div className="flex items-center justify-center">
+                  <img 
+                    src="/images/uploadpage/instructions.png" 
+                    alt="Instructions" 
+                    className="h-32 w-auto object-contain"
+                  />
+                </div>
+
+                {/* Understood Button */}
+                <button
+                  onClick={() => setShowInstructionsModal(false)}
+                  className="px-8 py-3 font-normal text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200 font-poppins"
+                  style={{
+                    background: '#F8FF13',
+                    color: 'black',
+                    border: '0.5px solid transparent',
+                    backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span className="block transform skew-x-12">
+                    UNDERSTOOD
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Preview Modal */}
         {showPreviewModal && uploadedImage && (
           <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
