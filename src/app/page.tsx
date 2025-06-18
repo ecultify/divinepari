@@ -8,7 +8,7 @@ export default function HomePage() {
         className="relative w-full bg-no-repeat bg-center"
         style={{
           backgroundImage: `url('/images/landing/backgrounds/section1.jpg')`,
-          backgroundSize: 'cover',
+          backgroundSize: '100% 100%',
           minHeight: '50vh',
           aspectRatio: 'auto',
         }}
@@ -33,7 +33,7 @@ export default function HomePage() {
               <img 
                 src="/images/landing/normalimages/parimatch.svg" 
                 alt="Parimatch Logo" 
-                className="h-12 md:h-16 lg:h-20"
+                className="h-12 md:h-16 lg:h-20 xl:h-24 2xl:h-28"
               />
             </button>
           </div>
@@ -47,12 +47,12 @@ export default function HomePage() {
                 <img 
                   src="/images/landing/normalimages/timetoshine.png" 
                   alt="Time to Shine" 
-                  className="max-w-full h-auto max-h-80 md:max-h-96 lg:max-h-[28rem] object-contain"
+                  className="max-w-full h-auto max-h-80 md:max-h-96 lg:max-h-[28rem] xl:max-h-[32rem] 2xl:max-h-[36rem] object-contain"
                 />
               </div>
               
               {/* Copy Text - Center aligned within column */}
-              <div className="font-poppins text-white text-base md:text-lg lg:text-xl xl:text-2xl leading-relaxed text-center flex justify-center items-center relative z-0" style={{ marginTop: '-50px' }}>
+              <div className="font-poppins text-white text-base md:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl leading-relaxed text-center flex justify-center items-center relative z-0" style={{ marginTop: '-50px' }}>
                 <div>
                   Get a <span className="italic font-bold" style={{ color: '#F8FF13' }}>unique poster</span> featuring <br />
                   YOU & the king of India's rap DIVINE & <br />
@@ -64,7 +64,7 @@ export default function HomePage() {
               <div className="mt-4 md:mt-6 flex justify-center" style={{ marginTop: '35px' }}>
                 <button 
                   onClick={() => window.location.href = '/generate'}
-                  className="relative px-8 md:px-12 py-3 md:py-4 font-bold text-black text-lg md:text-xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105"
+                  className="relative px-8 md:px-12 xl:px-16 2xl:px-20 py-3 md:py-4 xl:py-5 2xl:py-6 font-bold text-black text-lg md:text-xl xl:text-2xl 2xl:text-3xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105"
                   style={{
                     background: '#F8FF13',
                     border: '0.5px solid transparent',
@@ -83,7 +83,7 @@ export default function HomePage() {
               <img 
                 src="/images/landing/normalimages/divine.png" 
                 alt="DIVINE" 
-                className="w-full h-auto max-h-[1100px] md:max-h-[1600px] lg:max-h-[1900px] xl:max-h-[2100px] object-contain"
+                className="w-full h-auto max-h-[1100px] md:max-h-[1600px] lg:max-h-[1900px] xl:max-h-[2100px] 2xl:max-h-[2400px] object-contain"
               />
             </div>
           </div>
@@ -97,14 +97,14 @@ export default function HomePage() {
             height: '120px',
           }}
         >
-          <div className="text-white text-sm md:text-base font-medium mb-2 font-poppins">
+          <div className="text-white text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl font-medium mb-2 font-poppins">
             scroll down to see more
           </div>
           <div className="mb-2">
             <img 
               src="/images/icons/downward.png" 
               alt="Scroll down" 
-              className="w-6 h-6 md:w-8 md:h-8"
+              className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 2xl:w-14 2xl:h-14"
             />
           </div>
         </div>
@@ -115,8 +115,8 @@ export default function HomePage() {
         className="relative w-full bg-no-repeat bg-center"
         style={{
           backgroundImage: `url('/images/landing/backgrounds/section2.jpg')`,
-          backgroundSize: 'cover',
-          height: '210vh',
+          backgroundSize: '100% 100%',
+          height: '240vh',
           aspectRatio: 'auto',
           zIndex: 2,
         }}
@@ -134,21 +134,21 @@ export default function HomePage() {
         <div className="relative z-10 w-full h-full flex flex-col items-center px-4 md:px-6 py-6 md:py-8 overflow-visible" style={{ position: 'relative' }}>
           
           {/* Main Headline */}
-          <div className="text-center mb-3 md:mb-4 mt-16 md:mt-20">
-            <h2 className="font-poppins text-white text-2xl md:text-3xl lg:text-3xl xl:text-4xl font-bold mb-2">
+          <div className="text-center mb-3 md:mb-4 mt-16 md:mt-20 xl:mt-24 2xl:mt-28">
+            <h2 className="font-poppins text-white text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold mb-2">
               Get Your Iconic Poster
             </h2>
-            <h2 className="font-poppins text-2xl md:text-3xl lg:text-3xl xl:text-4xl font-bold" style={{ color: '#F8FF13' }}>
+            <h2 className="font-poppins text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold" style={{ color: '#F8FF13' }}>
               in 3 Simple Steps
             </h2>
           </div>
           
           {/* Section 2 Start Image - Hidden on mobile, shown on desktop */}
-          <div className="mb-6 md:mb-8 hidden md:block">
+          <div className="mb-6 md:mb-8 xl:mb-10 2xl:mb-12 hidden md:block">
             <img 
               src="/images/landing/normalimages/section2startimage.png" 
               alt="Steps" 
-              className="max-w-full h-auto max-h-64 md:max-h-80 lg:max-h-96 object-contain"
+              className="max-w-full h-auto max-h-64 md:max-h-80 lg:max-h-96 xl:max-h-[28rem] 2xl:max-h-[32rem] object-contain"
             />
           </div>
           
@@ -165,10 +165,10 @@ export default function HomePage() {
                 />
               </div>
               <div className="text-center">
-                <p className="font-poppins text-2xl font-bold mb-2" style={{ color: '#F8FF13' }}>
+                <p className="font-poppins text-2xl xl:text-3xl 2xl:text-4xl font-bold mb-2" style={{ color: '#F8FF13' }}>
                   Pick your Scene
                 </p>
-                <p className="font-poppins text-white text-lg">
+                <p className="font-poppins text-white text-lg xl:text-xl 2xl:text-2xl">
                   from the given options
                 </p>
               </div>
@@ -185,10 +185,10 @@ export default function HomePage() {
                 />
               </div>
               <div className="text-center">
-                <p className="font-poppins text-2xl font-bold mb-2" style={{ color: '#F8FF13' }}>
+                <p className="font-poppins text-2xl xl:text-3xl 2xl:text-4xl font-bold mb-2" style={{ color: '#F8FF13' }}>
                   Click a Selfie
                 </p>
-                <p className="font-poppins text-white text-lg">
+                <p className="font-poppins text-white text-lg xl:text-xl 2xl:text-2xl">
                   or upload your favorite pic
                 </p>
               </div>
@@ -205,10 +205,10 @@ export default function HomePage() {
                 />
               </div>
               <div className="text-center">
-                <p className="font-poppins text-2xl font-bold mb-2" style={{ color: '#F8FF13' }}>
+                <p className="font-poppins text-2xl xl:text-3xl 2xl:text-4xl font-bold mb-2" style={{ color: '#F8FF13' }}>
                   Download & Share
                 </p>
-                <p className="font-poppins text-white text-lg">
+                <p className="font-poppins text-white text-lg xl:text-xl 2xl:text-2xl">
                   your poster for a chance to win <span className="italic font-bold" style={{ color: '#F8FF13' }}>exclusive prizes!</span>
                 </p>
               </div>
@@ -216,10 +216,10 @@ export default function HomePage() {
           </div>
           
           {/* Generate Now Button */}
-          <div className="mb-8 md:mb-10" style={{ marginTop: '62px' }}>
+          <div className="mb-8 md:mb-10 xl:mb-12 2xl:mb-16" style={{ marginTop: '62px' }}>
             <button 
               onClick={() => window.location.href = '/generate'}
-              className="relative px-8 md:px-12 py-3 md:py-4 font-normal text-black text-lg md:text-xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105"
+              className="relative px-8 md:px-12 xl:px-16 2xl:px-20 py-3 md:py-4 xl:py-5 2xl:py-6 font-normal text-black text-lg md:text-xl xl:text-2xl 2xl:text-3xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105"
               style={{
                 background: '#F8FF13',
                 border: '0.5px solid transparent',
@@ -234,7 +234,7 @@ export default function HomePage() {
           
           {/* Share Your Poster Headline - Positioned 25px below GENERATE NOW button */}
           <div className="w-full text-center" style={{ marginTop: '25px', zIndex: 9998 }}>
-            <h3 className="font-poppins text-white text-xl md:text-2xl lg:text-2xl xl:text-3xl font-bold leading-tight">
+            <h3 className="font-poppins text-white text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold leading-tight">
               Share Your Poster & Win<br />
               <span style={{ color: '#F8FF13' }}>Limited-Edition Merch from DIVINE x Parimatch!</span>
             </h3>
@@ -253,28 +253,28 @@ export default function HomePage() {
             
             {/* How It Works - Center aligned title, left aligned content */}
             <div className="text-white font-poppins mb-6">
-              <h4 className="text-xl font-bold mb-4 text-center" style={{ color: '#F8FF13' }}>
+              <h4 className="text-xl xl:text-2xl 2xl:text-3xl font-bold mb-4 text-center" style={{ color: '#F8FF13' }}>
                 HOW IT WORKS:
               </h4>
               
-              <div className="space-y-3 text-sm text-left">
+              <div className="space-y-3 text-sm xl:text-base 2xl:text-lg text-left">
                 <div className="flex items-start space-x-2">
-                  <span className="font-bold text-base" style={{ color: '#F8FF13' }}>1.</span>
+                  <span className="font-bold text-base xl:text-lg 2xl:text-xl" style={{ color: '#F8FF13' }}>1.</span>
                   <span>Upload poster to your Instagram feed</span>
                 </div>
                 
                 <div className="flex items-start space-x-2">
-                  <span className="font-bold text-base" style={{ color: '#F8FF13' }}>2.</span>
+                  <span className="font-bold text-base xl:text-lg 2xl:text-xl" style={{ color: '#F8FF13' }}>2.</span>
                   <span>Use the hashtag <span className="font-bold">#DIVINExparimatch</span></span>
                 </div>
                 
                 <div className="flex items-start space-x-2">
-                  <span className="font-bold text-base" style={{ color: '#F8FF13' }}>3.</span>
+                  <span className="font-bold text-base xl:text-lg 2xl:text-xl" style={{ color: '#F8FF13' }}>3.</span>
                   <span>Tag <span className="font-bold" style={{ color: '#F8FF13' }}>@playwithparimatch</span> in your post</span>
                 </div>
               </div>
               
-              <div className="mt-4 text-sm text-left">
+              <div className="mt-4 text-sm xl:text-base 2xl:text-lg text-left">
                 <p className="mb-2">
                   <span className="font-bold">Parimatch will select 3 lucky winners each week!</span>
                 </p>
@@ -286,7 +286,7 @@ export default function HomePage() {
             
             {/* Campaign Date */}
             <div className="text-center mb-6">
-              <p className="font-poppins text-white text-sm">
+              <p className="font-poppins text-white text-sm xl:text-base 2xl:text-lg">
                 Campaign runs until date: <span className="font-bold">2025</span>
               </p>
             </div>
@@ -307,28 +307,28 @@ export default function HomePage() {
             
             {/* Right Column - How It Works (2/5 width) - Vertically centered with shirts */}
             <div className="lg:col-span-2 text-white font-poppins flex flex-col justify-center" style={{ zIndex: 10001 }}>
-              <h4 className="text-xl md:text-2xl lg:text-2xl font-bold mb-3 md:mb-4" style={{ color: '#F8FF13' }}>
+              <h4 className="text-xl md:text-2xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-bold mb-3 md:mb-4 xl:mb-5 2xl:mb-6" style={{ color: '#F8FF13' }}>
                 HOW IT WORKS:
               </h4>
               
-              <div className="space-y-2 md:space-y-3 text-sm md:text-base lg:text-base">
+              <div className="space-y-2 md:space-y-3 xl:space-y-4 2xl:space-y-5 text-sm md:text-base lg:text-base xl:text-lg 2xl:text-xl">
                 <div className="flex items-start space-x-2">
-                  <span className="font-bold text-base md:text-lg" style={{ color: '#F8FF13' }}>1.</span>
+                  <span className="font-bold text-base md:text-lg xl:text-xl 2xl:text-2xl" style={{ color: '#F8FF13' }}>1.</span>
                   <span>Upload poster to your Instagram feed</span>
                 </div>
                 
                 <div className="flex items-start space-x-2">
-                  <span className="font-bold text-base md:text-lg" style={{ color: '#F8FF13' }}>2.</span>
+                  <span className="font-bold text-base md:text-lg xl:text-xl 2xl:text-2xl" style={{ color: '#F8FF13' }}>2.</span>
                   <span>Use the hashtag <span className="font-bold">#DIVINExparimatch</span></span>
                 </div>
                 
                 <div className="flex items-start space-x-2">
-                  <span className="font-bold text-base md:text-lg" style={{ color: '#F8FF13' }}>3.</span>
+                  <span className="font-bold text-base md:text-lg xl:text-xl 2xl:text-2xl" style={{ color: '#F8FF13' }}>3.</span>
                   <span>Tag <span className="font-bold" style={{ color: '#F8FF13' }}>@playwithparimatch</span> in your post</span>
                 </div>
               </div>
               
-              <div className="mt-4 md:mt-6 text-sm md:text-base lg:text-base">
+              <div className="mt-4 md:mt-6 xl:mt-8 2xl:mt-10 text-sm md:text-base lg:text-base xl:text-lg 2xl:text-xl">
                 <p className="mb-2">
                   <span className="font-bold">Parimatch will select 3 lucky winners each week!</span>
                 </p>
@@ -366,8 +366,8 @@ export default function HomePage() {
         <div className="relative z-10 w-full h-full flex flex-col items-center px-4 md:px-6 py-12 md:py-16">
           
           {/* Gallery Title - with extra spacing from overflowing content */}
-          <div className="text-center mb-8 md:mb-10 gallery-title-container" style={{ marginTop: '456px' }}>
-            <h2 className="font-poppins text-white text-2xl md:text-3xl lg:text-4xl font-bold">
+          <div className="text-center mb-8 md:mb-10 xl:mb-12 2xl:mb-16 gallery-title-container" style={{ marginTop: '456px' }}>
+            <h2 className="font-poppins text-white text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold">
               GALLERY
             </h2>
           </div>
@@ -394,7 +394,7 @@ export default function HomePage() {
                     className="w-full h-auto max-h-72 md:max-h-80 lg:max-h-96 object-contain rounded-lg"
                   />
                 </div>
-                <h3 className="font-poppins text-white text-sm md:text-base lg:text-lg font-bold uppercase tracking-wide">
+                <h3 className="font-poppins text-white text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl font-bold uppercase tracking-wide">
                   Millionaire In Da House
                 </h3>
               </div>
@@ -408,7 +408,7 @@ export default function HomePage() {
                     className="w-full h-auto max-h-72 md:max-h-80 lg:max-h-96 object-contain rounded-lg"
                   />
                 </div>
-                <h3 className="font-poppins text-white text-sm md:text-base lg:text-lg font-bold uppercase tracking-wide">
+                <h3 className="font-poppins text-white text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl font-bold uppercase tracking-wide">
                   Bollywood Boss
                 </h3>
               </div>
@@ -422,7 +422,7 @@ export default function HomePage() {
                     className="w-full h-auto max-h-72 md:max-h-80 lg:max-h-96 object-contain rounded-lg"
                   />
                 </div>
-                <h3 className="font-poppins text-white text-sm md:text-base lg:text-lg font-bold uppercase tracking-wide">
+                <h3 className="font-poppins text-white text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl font-bold uppercase tracking-wide">
                   Hip Hop Star
                 </h3>
               </div>
@@ -447,7 +447,7 @@ export default function HomePage() {
                             style={{ maxHeight: '500px' }}
                           />
                         </div>
-                        <h3 className="font-poppins text-white text-base font-bold uppercase tracking-wide">
+                        <h3 className="font-poppins text-white text-base xl:text-lg 2xl:text-xl font-bold uppercase tracking-wide">
                           Millionaire In Da House
                         </h3>
                       </div>
@@ -464,7 +464,7 @@ export default function HomePage() {
                             style={{ maxHeight: '500px' }}
                           />
                         </div>
-                        <h3 className="font-poppins text-white text-base font-bold uppercase tracking-wide">
+                        <h3 className="font-poppins text-white text-base xl:text-lg 2xl:text-xl font-bold uppercase tracking-wide">
                           Bollywood Boss
                         </h3>
                       </div>
@@ -481,7 +481,7 @@ export default function HomePage() {
                             style={{ maxHeight: '500px' }}
                           />
                         </div>
-                        <h3 className="font-poppins text-white text-base font-bold uppercase tracking-wide">
+                        <h3 className="font-poppins text-white text-base xl:text-lg 2xl:text-xl font-bold uppercase tracking-wide">
                           Hip Hop Star
                         </h3>
                       </div>
