@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { trackUserStep, updateGenerationResult } from '../../../lib/supabase';
+import { trackUserStep, updateGenerationResult, uploadBase64Image, trackDownload } from '../../../lib/supabase';
 
 function ResultPageContent() {
   const [loading, setLoading] = useState(true);
@@ -96,16 +96,32 @@ function ResultPageContent() {
         setProgress(100);
         console.log('Face swap completed successfully');
         
+        // Upload generated poster to Supabase storage
+        let uploadResult = null;
+        if (sessionId) {
+          uploadResult = await uploadBase64Image(
+            result.imageUrl,
+            sessionId,
+            'generated_poster',
+            `generated_poster_${Date.now()}.jpg`
+          );
+        }
+        
         // Track successful generation
         if (sessionId) {
           await updateGenerationResult(sessionId, {
             processing_status: 'completed',
-            result_image_generated: true
+            result_image_generated: true,
+            generated_image_url: uploadResult?.url,
+            generated_image_path: uploadResult?.path
           });
           
           await trackUserStep(sessionId, 'result_generated', {
             action: 'generation_completed',
             success: true,
+            generated_image_stored: !!uploadResult,
+            storage_url: uploadResult?.url,
+            storage_path: uploadResult?.path,
             timestamp: new Date().toISOString()
           });
         }
@@ -151,14 +167,26 @@ function ResultPageContent() {
     }
   };
 
-  const handleDownload = () => {
-    if (processedImage) {
+  const handleDownload = async () => {
+    if (processedImage && sessionId) {
+      // Track download action with dedicated tracking
+      await trackDownload(sessionId, 'generated_poster', 'direct_download');
+      
+      // Also track in user journey
+      await trackUserStep(sessionId, 'result_generated', {
+        action: 'image_downloaded',
+        download_timestamp: new Date().toISOString()
+      });
+
       const link = document.createElement('a');
       link.href = processedImage;
-      link.download = `faceswap-result-${Date.now()}.jpg`;
+      link.download = `divine-parimatch-poster-${Date.now()}.jpg`;
+      link.setAttribute('target', '_blank');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      console.log('Image download initiated');
     }
   };
 

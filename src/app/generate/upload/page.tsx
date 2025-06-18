@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { trackUserStep, trackGenerationResult } from '../../../lib/supabase';
+import { trackUserStep, trackGenerationResult, uploadBase64Image } from '../../../lib/supabase';
 
 function UploadPhotoPageContent() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -51,14 +51,25 @@ function UploadPhotoPageContent() {
         setUploadedImage(e.target?.result as string);
         setShowPreviewModal(true);
         
-        // Track photo upload
+        // Upload image to Supabase storage and track
         if (sessionId) {
+          // Upload to Supabase storage
+          const uploadResult = await uploadBase64Image(
+            e.target?.result as string,
+            sessionId,
+            'user_photo',
+            file.name
+          );
+
           await trackUserStep(sessionId, 'photo_upload', {
             action: 'photo_uploaded',
             file_type: file.type,
             file_size: file.size,
             gender: gender,
             selected_poster: selectedPoster,
+            image_uploaded_to_storage: !!uploadResult,
+            storage_url: uploadResult?.url,
+            storage_path: uploadResult?.path,
             timestamp: new Date().toISOString()
           });
         }
@@ -88,11 +99,21 @@ function UploadPhotoPageContent() {
       setLoading(true);
       
       try {
+        // Get the uploaded image info from storage
+        const uploadResult = await uploadBase64Image(
+          uploadedImage,
+          sessionId,
+          'user_photo',
+          'user-photo.jpg'
+        );
+
         // Track generation start
         await trackGenerationResult(sessionId, {
           gender: gender,
           poster_selected: selectedPoster,
           user_image_uploaded: true,
+          user_image_url: uploadResult?.url,
+          user_image_path: uploadResult?.path,
           processing_status: 'started',
           result_image_generated: false
         });
