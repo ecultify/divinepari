@@ -54,9 +54,9 @@ export default function HomePage() {
               {/* Copy Text - Center aligned within column */}
               <div className="font-poppins text-white text-base md:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl leading-relaxed text-center flex justify-center items-center relative z-0" style={{ marginTop: '-50px' }}>
                 <div>
-                  Get a <span className="italic font-bold" style={{ color: '#F8FF13' }}>unique poster</span> featuring <br />
-                  YOU & the king of India's rap DIVINE & <br />
-                  <span className="italic font-bold" style={{ color: '#F8FF13' }}>win limited-edition prizes</span>
+                                  Get a <span className="italic font-bold" style={{ color: '#F8FF13' }}>unique poster</span> featuring <br />
+                YOU & the king of India&apos;s rap DIVINE & <br />
+                <span className="italic font-bold" style={{ color: '#F8FF13' }}>win limited-edition prizes</span>
                 </div>
               </div>
               

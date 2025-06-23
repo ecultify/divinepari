@@ -4,7 +4,7 @@
       "maxDuration": 60
     },
     "src/app/api/process-hairswap/route.ts": {
-      "maxDuration": 300
+      "maxDuration": 60
     },
     "src/app/api/start-hairswap/route.ts": {
       "maxDuration": 10

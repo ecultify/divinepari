@@ -700,7 +700,7 @@ function ResultPageContent() {
             <div className="flex flex-col justify-center text-center lg:text-center lg:pl-4 lg:transform lg:translate-x-[-80px]">
               {/* Main Title */}
               <h1 className="text-white text-base md:text-xl lg:text-2xl font-bold mb-3 md:mb-4 font-poppins">
-                HERE'S YOUR PERSONALIZED<br />
+                HERE&apos;S YOUR PERSONALIZED<br />
                 POSTER <span style={{ color: '#F8FF13' }}>WITH DIVINE HIMSELF!</span>
               </h1>
 
@@ -739,7 +739,7 @@ function ResultPageContent() {
               {/* Try Again Section */}
               <div className="text-white font-poppins">
                 <p className="text-xs md:text-sm lg:text-sm mb-0">Not vibing with this one?</p>
-                <p className="text-xs md:text-sm lg:text-sm mb-3">Hit refresh and let's create another legend!</p>
+                <p className="text-xs md:text-sm lg:text-sm mb-3">Hit refresh and let&apos;s create another legend!</p>
                 
                 <button
                   onClick={handleTryAgain}
