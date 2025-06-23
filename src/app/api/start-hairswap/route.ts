@@ -58,14 +58,19 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString()
     };
 
-    // Create hair_swap_jobs table entry
-    const { error: dbError } = await supabase
-      .from('hair_swap_jobs')
-      .insert([jobRecord]);
+    // Create hair_swap_jobs table entry (if table exists)
+    try {
+      const { error: dbError } = await supabase
+        .from('hair_swap_jobs')
+        .insert([jobRecord]);
 
-    if (dbError) {
-      console.error('Failed to store job record:', dbError);
-      // Continue anyway - job is still running
+      if (dbError) {
+        console.error('Failed to store job record:', dbError);
+        // Continue anyway - job is still running
+      }
+    } catch (tableError) {
+      console.warn('hair_swap_jobs table not found - continuing without database tracking');
+      // Continue anyway - the core functionality still works
     }
 
     console.log(`Hair swap job started successfully: ${request_id}`);

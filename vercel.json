@@ -12,11 +12,5 @@
     "src/app/api/check-hairswap/route.ts": {
       "maxDuration": 10
     }
-  },
-  "crons": [
-    {
-      "path": "/api/cleanup-temp-files",
-      "schedule": "0 2 * * *"
-    }
-  ]
+  }
 } 

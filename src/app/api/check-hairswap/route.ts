@@ -16,19 +16,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get job info from database
-    const { data: jobData, error: jobError } = await supabase
-      .from('hair_swap_jobs')
-      .select('*')
-      .eq('request_id', jobId)
-      .eq('session_id', sessionId)
-      .single();
+    // Get job info from database (if table exists)
+    let jobData = null;
+    try {
+      const { data, error: jobError } = await supabase
+        .from('hair_swap_jobs')
+        .select('*')
+        .eq('request_id', jobId)
+        .eq('session_id', sessionId)
+        .single();
 
-    if (jobError || !jobData) {
-      console.error('Job not found:', jobError);
+      if (jobError || !data) {
+        console.error('Job not found:', jobError);
+        return NextResponse.json(
+          { success: false, error: 'Job not found' },
+          { status: 404 }
+        );
+      }
+      jobData = data;
+    } catch (tableError) {
+      console.warn('hair_swap_jobs table not found');
       return NextResponse.json(
-        { success: false, error: 'Job not found' },
-        { status: 404 }
+        { success: false, error: 'Hair swap tracking not available - please run database migration' },
+        { status: 503 }
       );
     }
 
