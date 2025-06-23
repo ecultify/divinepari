@@ -19,7 +19,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "FaceSwap AI - Transform Your Photos with AI Magic",
+  title: "Divine X PariMatch",
   description: "Experience the future of photo transformation. Upload your image and watch as our advanced AI creates stunning face-swap results in seconds.",
 };
 
