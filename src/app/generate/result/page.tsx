@@ -116,8 +116,7 @@ function ResultPageContent() {
             result_image_generated: true,
             generated_image_url: faceSwapUploadResult?.url,
             generated_image_path: faceSwapUploadResult?.path,
-            hair_swap_requested: true, // Mark that hair swap will start
-            hair_swap_completed: false
+            hair_swap_requested: true // Mark that hair swap will start
           });
           
           await trackUserStep(sessionId, 'result_generated', {
@@ -130,11 +129,8 @@ function ResultPageContent() {
           });
         }
         
-        // Start async hair swap process after face swap completion
-        console.log('Face swap completed, starting hair swap process...');
-        
-        // Start async hair swap process
-        await startAsyncHairSwap(result.imageUrl, userImage, sessionId);
+        // Automatically start hair swap process
+        await performAutomaticHairSwap(result.imageUrl, userImage, sessionId);
       } else {
         throw new Error(result.error || 'Processing failed - no image returned');
       }
@@ -201,11 +197,19 @@ function ResultPageContent() {
     }
   };
 
-  const startAsyncHairSwap = async (faceSwappedImageUrl: string, userOriginalImageUrl: string, sessionId: string) => {
+  const performAutomaticHairSwap = async (faceSwappedImageUrl: string, userOriginalImageUrl: string, sessionId: string) => {
     try {
-      console.log('Starting async hair swap process...');
+      console.log('Starting automatic hair swap process...');
       setProgress(80);
       
+      // Track hair swap processing start
+      if (sessionId) {
+        await trackUserStep(sessionId, 'hair_swap_processing', {
+          action: 'hair_swap_started',
+          timestamp: new Date().toISOString()
+        });
+      }
+
       // Convert images to public URLs if needed
       let faceSwappedUrl = faceSwappedImageUrl;
       let userOriginalUrl = userOriginalImageUrl;
@@ -237,158 +241,90 @@ function ResultPageContent() {
         }
       }
 
-      // Start hair swap job
-      console.log('Starting hair swap job...');
-      const startResponse = await fetch('/api/start-hairswap', {
+      console.log('Calling hair swap API...');
+      setProgress(85);
+
+      // Call hair swap API
+      const hairSwapResponse = await fetch('/api/process-hairswap', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           faceSwappedImageUrl: faceSwappedUrl,
-          userOriginalImageUrl: userOriginalUrl,
-          sessionId: sessionId
+          userOriginalImageUrl: userOriginalUrl
         }),
       });
 
-      if (!startResponse.ok) {
-        throw new Error('Failed to start hair swap job');
+      if (!hairSwapResponse.ok) {
+        const errorData = await hairSwapResponse.json();
+        console.error('Hair swap API error:', errorData);
+        throw new Error(errorData.error || `HTTP ${hairSwapResponse.status}: Hair swap processing failed`);
       }
 
-      const startResult = await startResponse.json();
+      const result = await hairSwapResponse.json();
+      setProgress(95);
       
-      if (!startResult.success) {
-        throw new Error(startResult.error || 'Failed to start hair swap');
+      console.log('Hair swap result:', { success: result.success, hasImage: !!result.imageUrl });
+
+      if (result.success && result.imageUrl) {
+        setHairSwappedImage(result.imageUrl);
+        setProcessedImage(result.imageUrl); // Update the displayed image
+        setProgress(100);
+        console.log('Hair swap completed successfully - final result ready!');
+        
+        // Upload final hair-swapped result to Supabase storage
+        if (sessionId) {
+          const uploadResult = await uploadBase64Image(
+            result.imageUrl,
+            sessionId,
+            'generated_poster',
+            `final_poster_${Date.now()}.jpg`
+          );
+          
+          // Update generation result with hair swap completion
+          await updateGenerationResult(sessionId, {
+            hair_swap_completed: true,
+            hair_swap_image_url: uploadResult?.url,
+            hair_swap_image_path: uploadResult?.path
+          });
+          
+          // Track final completion
+          await trackUserStep(sessionId, 'hair_swap_completed', {
+            action: 'final_poster_completed',
+            success: true,
+            final_image_stored: !!uploadResult,
+            storage_url: uploadResult?.url,
+            storage_path: uploadResult?.path,
+            timestamp: new Date().toISOString()
+          });
+        }
+      } else {
+        throw new Error(result.error || 'Hair swap failed - no image returned');
       }
-
-      console.log(`Hair swap job started: ${startResult.jobId}`);
-      
-      // Track hair swap processing start
-      if (sessionId) {
-        await trackUserStep(sessionId, 'hair_swap_processing', {
-          action: 'hair_swap_job_started',
-          job_id: startResult.jobId,
-          timestamp: new Date().toISOString()
-        });
-      }
-
-      // Start polling for completion
-      await pollHairSwapCompletion(startResult.jobId, sessionId, faceSwappedImageUrl);
-
     } catch (error) {
-      console.error('Error starting async hair swap:', error);
+      console.error('Automatic hair swap error:', error);
       console.log('Hair swap failed, showing face-swapped result only');
       
       // If hair swap fails, show the face-swapped result
       setProcessedImage(faceSwappedImageUrl);
       setProgress(100);
       
+      let errorMessage = 'Hair swap failed, showing face-swapped result';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       // Track error but don't show it to user since we have face swap
       if (sessionId) {
         await trackUserStep(sessionId, 'error', {
-          error_type: 'hair_swap_start_error',
-          error_message: error instanceof Error ? error.message : 'Unknown error',
+          error_type: 'hair_swap_error',
+          error_message: errorMessage,
           fallback_to_face_swap: true,
           timestamp: new Date().toISOString()
         });
       }
     }
-  };
-
-  const pollHairSwapCompletion = async (jobId: string, sessionId: string, fallbackImage: string) => {
-    const maxAttempts = 30; // 5 minutes max (10s intervals)
-    let attempts = 0;
-
-    const poll = async () => {
-      try {
-        attempts++;
-        console.log(`Polling hair swap status (${attempts}/${maxAttempts})...`);
-        
-        const checkResponse = await fetch('/api/check-hairswap', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            jobId: jobId,
-            sessionId: sessionId
-          }),
-        });
-
-        if (!checkResponse.ok) {
-          throw new Error('Failed to check job status');
-        }
-
-        const result = await checkResponse.json();
-        
-        if (result.success && result.status === 'COMPLETED' && result.imageUrl) {
-          // Hair swap completed!
-          setHairSwappedImage(result.imageUrl);
-          setProcessedImage(result.imageUrl);
-          setProgress(100);
-          console.log('Hair swap completed successfully!');
-          
-          // Upload final result and track completion
-          if (sessionId) {
-            const uploadResult = await uploadBase64Image(
-              result.imageUrl,
-              sessionId,
-              'generated_poster',
-              `final_poster_${Date.now()}.jpg`
-            );
-            
-            await updateGenerationResult(sessionId, {
-              hair_swap_completed: true,
-              hair_swap_image_url: uploadResult?.url,
-              hair_swap_image_path: uploadResult?.path
-            });
-            
-            await trackUserStep(sessionId, 'hair_swap_completed', {
-              action: 'final_poster_completed',
-              success: true,
-              job_id: jobId,
-              final_image_stored: !!uploadResult,
-              storage_url: uploadResult?.url,
-              storage_path: uploadResult?.path,
-              timestamp: new Date().toISOString()
-            });
-          }
-          
-          return; // Stop polling
-        } else if (result.status === 'FAILED') {
-          throw new Error('Hair swap job failed');
-        } else {
-          // Still processing, continue polling
-          console.log(`Hair swap status: ${result.status}`);
-          setProgress(Math.min(95, 80 + (attempts * 0.5))); // Gradual progress
-          
-          if (attempts < maxAttempts) {
-            setTimeout(poll, 10000); // Poll every 10 seconds
-          } else {
-            throw new Error('Hair swap timed out');
-          }
-        }
-      } catch (error) {
-        console.error('Error polling hair swap status:', error);
-        
-        // Fallback to face-swapped result
-        setProcessedImage(fallbackImage);
-        setProgress(100);
-        
-        if (sessionId) {
-          await trackUserStep(sessionId, 'error', {
-            error_type: 'hair_swap_polling_error',
-            error_message: error instanceof Error ? error.message : 'Unknown error',
-            fallback_to_face_swap: true,
-            attempts: attempts,
-            timestamp: new Date().toISOString()
-          });
-        }
-      }
-    };
-
-    // Start polling
-    setTimeout(poll, 5000); // Start first poll after 5 seconds
   };
 
   const handleTryAgain = () => {
@@ -698,7 +634,7 @@ function ResultPageContent() {
             <div className="flex flex-col justify-center text-center lg:text-center lg:pl-4 lg:transform lg:translate-x-[-80px]">
               {/* Main Title */}
               <h1 className="text-white text-base md:text-xl lg:text-2xl font-bold mb-3 md:mb-4 font-poppins">
-                HERE&apos;S YOUR PERSONALIZED<br />
+                HERE'S YOUR PERSONALIZED<br />
                 POSTER <span style={{ color: '#F8FF13' }}>WITH DIVINE HIMSELF!</span>
               </h1>
 
@@ -737,7 +673,7 @@ function ResultPageContent() {
               {/* Try Again Section */}
               <div className="text-white font-poppins">
                 <p className="text-xs md:text-sm lg:text-sm mb-0">Not vibing with this one?</p>
-                <p className="text-xs md:text-sm lg:text-sm mb-3">Hit refresh and let&apos;s create another legend!</p>
+                <p className="text-xs md:text-sm lg:text-sm mb-3">Hit refresh and let's create another legend!</p>
                 
                 <button
                   onClick={handleTryAgain}
