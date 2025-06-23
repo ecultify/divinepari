@@ -11,7 +11,7 @@ if (!SEGMIND_API_KEY) {
 }
 
 // Helper function to poll for hair swap result
-async function pollHairSwapResult(pollUrl: string, requestId: string, maxAttempts = 30): Promise<string> {
+async function pollHairSwapResult(pollUrl: string, requestId: string, maxAttempts = 60): Promise<string> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       console.log(`Polling attempt ${attempt + 1}/${maxAttempts} for request ${requestId}`);
@@ -20,7 +20,8 @@ async function pollHairSwapResult(pollUrl: string, requestId: string, maxAttempt
         headers: {
           'x-api-key': SEGMIND_API_KEY,
           'Content-Type': 'application/json'
-        }
+        },
+        timeout: 10000 // 10 second timeout for each poll request
       });
 
       console.log('Poll response status:', response.data.status);
@@ -30,25 +31,42 @@ async function pollHairSwapResult(pollUrl: string, requestId: string, maxAttempt
         return response.data.output_image;
       } else if (response.data.status === 'FAILED') {
         throw new Error('Hair swap processing failed');
+      } else if (response.data.status === 'QUEUED' || response.data.status === 'PROCESSING') {
+        console.log(`Hair swap still processing... Status: ${response.data.status}`);
       }
 
-      // Wait 2 seconds before next poll
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait 3 seconds before next poll (increased from 2s for heavy processing)
+      await new Promise(resolve => setTimeout(resolve, 3000));
     } catch (error) {
       console.error(`Poll attempt ${attempt + 1} failed:`, error);
+      
+      // If it's a timeout error, continue polling
+      if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
+        console.log('Poll request timed out, continuing...');
+        continue;
+      }
+      
+      // For other errors, retry a few times before giving up
+      if (attempt < 5) {
+        console.log('Retrying poll request...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        continue;
+      }
+      
       if (attempt === maxAttempts - 1) {
         throw error;
       }
-      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
   
-  throw new Error('Hair swap processing timed out');
+  throw new Error('Hair swap processing timed out after 3 minutes');
 }
 
 export async function POST(request: NextRequest) {
   try {
     console.log('Hair swap API called');
+    console.log('Segmind API Key available:', !!SEGMIND_API_KEY);
+    console.log('Hair swap URL:', SEGMIND_HAIRSWAP_URL);
     
     // Check if API key is available
     if (!SEGMIND_API_KEY) {
@@ -90,7 +108,7 @@ export async function POST(request: NextRequest) {
           'x-api-key': SEGMIND_API_KEY,
           'Content-Type': 'application/json'
         },
-        timeout: 30000 // 30 seconds timeout for initial request
+        timeout: 90000 // 60 seconds timeout for initial request
       });
 
       console.log('Segmind Hair Swap API initial response:', initResponse.data);
@@ -100,14 +118,21 @@ export async function POST(request: NextRequest) {
       if (axios.isAxiosError(error)) {
         if (error.response) {
           console.error('API Error Response:', error.response.data);
+          const statusCode = error.response.status;
+          const errorMessage = error.response.data?.error || error.response.data?.message || `Hair swap API error: ${statusCode}`;
           return NextResponse.json(
-            { success: false, error: `Hair swap API error: ${error.response.status}` },
+            { success: false, error: errorMessage },
             { status: 500 }
           );
         } else if (error.code === 'ECONNABORTED') {
           return NextResponse.json(
-            { success: false, error: 'Hair swap request timed out. Please try again.' },
+            { success: false, error: 'Hair swap request timed out. The service may be busy, please try again.' },
             { status: 408 }
+          );
+        } else if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
+          return NextResponse.json(
+            { success: false, error: 'Hair swap service is currently unavailable' },
+            { status: 503 }
           );
         }
       }

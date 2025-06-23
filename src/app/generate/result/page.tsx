@@ -257,12 +257,28 @@ function ResultPageContent() {
       });
 
       if (!hairSwapResponse.ok) {
-        const errorData = await hairSwapResponse.json();
-        console.error('Hair swap API error:', errorData);
-        throw new Error(errorData.error || `HTTP ${hairSwapResponse.status}: Hair swap processing failed`);
+        let errorMessage = `HTTP ${hairSwapResponse.status}: Hair swap processing failed`;
+        try {
+          const errorData = await hairSwapResponse.json();
+          console.error('Hair swap API error:', errorData);
+          errorMessage = errorData.error || errorMessage;
+        } catch (jsonError) {
+          console.error('Failed to parse error response as JSON:', jsonError);
+          // For 504 errors, provide a more user-friendly message
+          if (hairSwapResponse.status === 504) {
+            errorMessage = 'Hair swap processing timed out. The service may be busy.';
+          }
+        }
+        throw new Error(errorMessage);
       }
 
-      const result = await hairSwapResponse.json();
+      let result;
+      try {
+        result = await hairSwapResponse.json();
+      } catch (jsonError) {
+        console.error('Failed to parse hair swap response as JSON:', jsonError);
+        throw new Error('Invalid response from hair swap service');
+      }
       setProgress(95);
       
       console.log('Hair swap result:', { success: result.success, hasImage: !!result.imageUrl });

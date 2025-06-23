@@ -18,6 +18,20 @@ const nextConfig: NextConfig = {
   serverRuntimeConfig: {
     apiTimeout: 60000,
   },
+  // Increase timeout for serverless functions
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'x-timeout',
+            value: '300000', // 5 minutes
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
