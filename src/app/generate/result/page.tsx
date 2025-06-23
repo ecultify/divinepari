@@ -116,7 +116,8 @@ function ResultPageContent() {
             result_image_generated: true,
             generated_image_url: faceSwapUploadResult?.url,
             generated_image_path: faceSwapUploadResult?.path,
-            hair_swap_requested: true // Mark that hair swap will start
+            hair_swap_requested: true, // Mark that hair swap will start
+            hair_swap_completed: false
           });
           
           await trackUserStep(sessionId, 'result_generated', {
@@ -129,14 +130,11 @@ function ResultPageContent() {
           });
         }
         
-        // TODO: Complete async hair swap setup - database migration required
-        // For now, show face-swapped result immediately
-        setProcessedImage(result.imageUrl);
-        setProgress(100);
-        console.log('Face swap completed - async hair swap disabled until database migration is complete');
+        // Start async hair swap process after face swap completion
+        console.log('Face swap completed, starting hair swap process...');
         
-        // Start async hair swap process (disabled until DB migration)
-        // await startAsyncHairSwap(result.imageUrl, userImage, sessionId);
+        // Start async hair swap process
+        await startAsyncHairSwap(result.imageUrl, userImage, sessionId);
       } else {
         throw new Error(result.error || 'Processing failed - no image returned');
       }
