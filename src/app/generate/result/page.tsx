@@ -10,6 +10,9 @@ function ResultPageContent() {
   const [userImage, setUserImage] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [sessionId, setSessionId] = useState<string>('');
+  const [hairSwapLoading, setHairSwapLoading] = useState(false);
+  const [hairSwappedImage, setHairSwappedImage] = useState<string | null>(null);
+  const [originalFaceSwapImage, setOriginalFaceSwapImage] = useState<string | null>(null);
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -93,6 +96,7 @@ function ResultPageContent() {
 
       if (result.success && result.imageUrl) {
         setProcessedImage(result.imageUrl);
+        setOriginalFaceSwapImage(result.imageUrl); // Store for potential hair swap
         setProgress(100);
         console.log('Face swap completed successfully');
         
@@ -175,18 +179,162 @@ function ResultPageContent() {
       // Also track in user journey
       await trackUserStep(sessionId, 'result_generated', {
         action: 'image_downloaded',
+        image_type: hairSwappedImage ? 'hair_swapped' : 'face_swapped',
         download_timestamp: new Date().toISOString()
       });
 
       const link = document.createElement('a');
       link.href = processedImage;
-      link.download = `divine-parimatch-poster-${Date.now()}.jpg`;
+      link.download = `divine-parimatch-poster-${hairSwappedImage ? 'hair-swapped' : 'face-swapped'}-${Date.now()}.jpg`;
       link.setAttribute('target', '_blank');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      console.log('Image download initiated');
+      console.log('Image download initiated:', hairSwappedImage ? 'hair-swapped version' : 'face-swapped version');
+    }
+  };
+
+  const processHairSwap = async () => {
+    if (!originalFaceSwapImage || !userImage) {
+      console.error('Missing required images for hair swap');
+      return;
+    }
+
+    try {
+      setHairSwapLoading(true);
+      setError(null);
+
+      console.log('Starting hair swap process...');
+      
+      // Track hair swap request
+      if (sessionId) {
+        await updateGenerationResult(sessionId, {
+          hair_swap_requested: true
+        });
+        
+        await trackUserStep(sessionId, 'hair_swap_processing', {
+          action: 'hair_swap_started',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Convert face-swapped image to public URL for the API
+      let faceSwappedImageUrl = originalFaceSwapImage;
+      let userOriginalImageUrl = userImage;
+
+      // If we have base64 data URLs, we need to upload them to get public URLs
+      if (originalFaceSwapImage.startsWith('data:')) {
+        console.log('Uploading face-swapped image to get public URL...');
+        const uploadResult = await uploadBase64Image(
+          originalFaceSwapImage,
+          sessionId,
+          'generated_poster',
+          `temp_faceswap_${Date.now()}.jpg`
+        );
+        if (uploadResult?.url) {
+          faceSwappedImageUrl = uploadResult.url;
+        }
+      }
+
+      if (userImage.startsWith('data:')) {
+        console.log('Uploading user original image to get public URL...');
+        const uploadResult = await uploadBase64Image(
+          userImage,
+          sessionId,
+          'user_photo',
+          `temp_user_${Date.now()}.jpg`
+        );
+        if (uploadResult?.url) {
+          userOriginalImageUrl = uploadResult.url;
+        }
+      }
+
+      console.log('Calling hair swap API...');
+
+      // Call hair swap API
+      const hairSwapResponse = await fetch('/api/process-hairswap', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          faceSwappedImageUrl,
+          userOriginalImageUrl
+        }),
+      });
+
+      if (!hairSwapResponse.ok) {
+        const errorData = await hairSwapResponse.json();
+        console.error('Hair swap API error:', errorData);
+        throw new Error(errorData.error || `HTTP ${hairSwapResponse.status}: Hair swap processing failed`);
+      }
+
+      const result = await hairSwapResponse.json();
+      
+      console.log('Hair swap result:', { success: result.success, hasImage: !!result.imageUrl });
+
+      if (result.success && result.imageUrl) {
+        setHairSwappedImage(result.imageUrl);
+        setProcessedImage(result.imageUrl); // Update the displayed image
+        console.log('Hair swap completed successfully');
+        
+        // Upload hair-swapped result to Supabase storage
+        if (sessionId) {
+          const uploadResult = await uploadBase64Image(
+            result.imageUrl,
+            sessionId,
+            'generated_poster',
+            `hair_swapped_poster_${Date.now()}.jpg`
+          );
+          
+          // Update generation result with hair swap completion
+          await updateGenerationResult(sessionId, {
+            hair_swap_completed: true,
+            hair_swap_image_url: uploadResult?.url,
+            hair_swap_image_path: uploadResult?.path
+          });
+          
+          // Track hair swap completion
+          await trackUserStep(sessionId, 'hair_swap_completed', {
+            action: 'hair_swap_completed',
+            success: true,
+            hair_swapped_image_stored: !!uploadResult,
+            storage_url: uploadResult?.url,
+            storage_path: uploadResult?.path,
+            timestamp: new Date().toISOString()
+          });
+        }
+      } else {
+        throw new Error(result.error || 'Hair swap failed - no image returned');
+      }
+    } catch (error) {
+      console.error('Hair swap error:', error);
+      let errorMessage = 'Hair swap failed. Please try again.';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      
+      // Track error
+      if (sessionId) {
+        await trackUserStep(sessionId, 'error', {
+          error_type: 'hair_swap_error',
+          error_message: errorMessage,
+          timestamp: new Date().toISOString()
+        });
+      }
+    } finally {
+      setHairSwapLoading(false);
+    }
+  };
+
+  const handleRevertToFaceSwap = () => {
+    if (originalFaceSwapImage) {
+      setProcessedImage(originalFaceSwapImage);
+      setHairSwappedImage(null);
     }
   };
 
@@ -512,13 +660,75 @@ function ResultPageContent() {
                 </p>
               </div>
 
+              {/* Hair Swap Section */}
+              {originalFaceSwapImage && !hairSwapLoading && (
+                <div className="mb-4 md:mb-6">
+                  {!hairSwappedImage ? (
+                    <div className="text-center">
+                      <p className="text-white text-xs md:text-sm mb-3 font-poppins">
+                        Want to keep your original hairstyle?
+                      </p>
+                      <button
+                        onClick={processHairSwap}
+                        className="px-6 py-2 md:px-8 md:py-2 mr-3 font-normal text-sm md:text-base uppercase tracking-wider transition-all duration-200 hover:scale-105 font-poppins"
+                        style={{
+                          background: 'transparent',
+                          color: '#F8FF13',
+                          border: '2px solid #F8FF13',
+                          borderRadius: '5px',
+                        }}
+                      >
+                        ADD MY HAIR
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <p className="text-white text-xs md:text-sm mb-3 font-poppins">
+                        Hair style applied! 
+                      </p>
+                      <button
+                        onClick={handleRevertToFaceSwap}
+                        className="px-6 py-2 md:px-8 md:py-2 mr-3 font-normal text-sm md:text-base uppercase tracking-wider transition-all duration-200 hover:scale-105 font-poppins"
+                        style={{
+                          background: 'transparent',
+                          color: '#F8FF13',
+                          border: '2px solid #F8FF13',
+                          borderRadius: '5px',
+                        }}
+                      >
+                        REVERT TO ORIGINAL
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Hair Swap Loading */}
+              {hairSwapLoading && (
+                <div className="mb-4 md:mb-6 text-center">
+                  <p className="text-white text-sm mb-3 font-poppins">
+                    Applying your hairstyle...
+                  </p>
+                  <div className="w-full bg-gray-600 rounded-full h-2 mb-3">
+                    <div 
+                      className="h-2 rounded-full transition-all duration-500 animate-pulse"
+                      style={{
+                        width: '70%',
+                        backgroundColor: '#F8FF13',
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
               {/* Download Button */}
               <div className="mb-4 md:mb-6">
                 <button
                   onClick={handleDownload}
-                  className="px-6 py-2 md:px-10 md:py-3 font-normal text-base md:text-lg uppercase tracking-wider transition-all duration-200 hover:scale-105 font-poppins"
+                  disabled={hairSwapLoading}
+                  className="px-6 py-2 md:px-10 md:py-3 font-normal text-base md:text-lg uppercase tracking-wider transition-all duration-200 hover:scale-105 font-poppins disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
-                    background: '#F8FF13',
+                    background: hairSwapLoading ? '#666' : '#F8FF13',
                     color: 'black',
                     border: 'none',
                     borderRadius: '5px',

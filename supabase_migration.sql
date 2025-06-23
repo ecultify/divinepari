@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 CREATE TABLE IF NOT EXISTS user_journey (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   session_id TEXT NOT NULL REFERENCES user_sessions(session_id) ON DELETE CASCADE,
-  step TEXT NOT NULL CHECK (step IN ('gender_selection', 'poster_selection', 'photo_upload', 'processing', 'result_generated', 'error')),
+  step TEXT NOT NULL CHECK (step IN ('gender_selection', 'poster_selection', 'photo_upload', 'processing', 'result_generated', 'hair_swap_processing', 'hair_swap_completed', 'error')),
   data JSONB,
   timestamp TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::TEXT, NOW()) NOT NULL
 );
@@ -24,6 +24,10 @@ CREATE TABLE IF NOT EXISTS generation_results (
   user_image_uploaded BOOLEAN DEFAULT FALSE,
   processing_status TEXT NOT NULL CHECK (processing_status IN ('started', 'completed', 'failed')),
   result_image_generated BOOLEAN DEFAULT FALSE,
+  hair_swap_requested BOOLEAN DEFAULT FALSE,
+  hair_swap_completed BOOLEAN DEFAULT FALSE,
+  hair_swap_image_url TEXT,
+  hair_swap_image_path TEXT,
   error_message TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::TEXT, NOW()) NOT NULL
 );

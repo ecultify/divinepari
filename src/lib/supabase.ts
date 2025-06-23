@@ -16,7 +16,7 @@ export interface UserSession {
 export interface UserJourney {
   id?: string
   session_id: string
-  step: 'gender_selection' | 'poster_selection' | 'photo_upload' | 'processing' | 'result_generated' | 'error'
+  step: 'gender_selection' | 'poster_selection' | 'photo_upload' | 'processing' | 'result_generated' | 'hair_swap_processing' | 'hair_swap_completed' | 'error'
   data?: any
   timestamp?: string
 }
@@ -29,6 +29,10 @@ export interface GenerationResult {
   user_image_uploaded: boolean
   processing_status: 'started' | 'completed' | 'failed'
   result_image_generated: boolean
+  hair_swap_requested?: boolean
+  hair_swap_completed?: boolean
+  hair_swap_image_url?: string
+  hair_swap_image_path?: string
   user_image_url?: string
   user_image_path?: string
   generated_image_url?: string
