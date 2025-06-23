@@ -1,0 +1,22 @@
+{
+  "functions": {
+    "src/app/api/process-faceswap/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/process-hairswap/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/start-hairswap/route.ts": {
+      "maxDuration": 10
+    },
+    "src/app/api/check-hairswap/route.ts": {
+      "maxDuration": 10
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cleanup-temp-files",
+      "schedule": "0 2 * * *"
+    }
+  ]
+} 
