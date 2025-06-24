@@ -38,9 +38,17 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzd
    - Add the environment variables listed above
    - Make sure `SEGMIND_API_KEY` has your actual API key
 
-5. **Deploy**:
+5. **Install Dependencies & Deploy**:
+   ```bash
+   npm install
+   ```
    - Click "Deploy Site"
    - Wait for build to complete
+
+6. **If API routes still don't work**:
+   - Go to Site Settings → Functions
+   - Ensure "Enable background functions" is checked
+   - Redeploy the site
 
 ### **Features**
 
