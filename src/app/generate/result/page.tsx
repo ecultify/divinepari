@@ -67,7 +67,7 @@ function ResultPageContent() {
       const formData = new FormData();
       formData.append('userImage', blob, 'user-photo.jpg');
       formData.append('posterName', posterName);
-      formData.append('gender', gender);
+      formData.append('sessionId', sessionId);
 
       setProgress(50);
 
@@ -117,11 +117,11 @@ function ResultPageContent() {
             result_image_generated: true,
             generated_image_url: faceSwapUploadResult?.url,
             generated_image_path: faceSwapUploadResult?.path,
-            hair_swap_requested: true // Mark that hair swap will start
+            hair_swap_completed: true // FaceSwap v4 completed both face and hair
           });
           
           await trackUserStep(sessionId, 'result_generated', {
-            action: 'face_swap_completed',
+            action: 'face_and_hair_swap_completed',
             success: true,
             generated_image_stored: !!faceSwapUploadResult,
             storage_url: faceSwapUploadResult?.url,
@@ -130,8 +130,10 @@ function ResultPageContent() {
           });
         }
         
-        // Automatically start hair swap process
-        await performAutomaticHairSwap(result.imageUrl, userImage, sessionId);
+        // FaceSwap v4 handles both face and hair swapping in one call
+        setProcessedImage(result.imageUrl);
+        setProgress(100);
+        console.log('Face and hair swap completed successfully with FaceSwap v4!');
       } else {
         throw new Error(result.error || 'Processing failed - no image returned');
       }

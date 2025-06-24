@@ -11,7 +11,7 @@ if (!SEGMIND_API_KEY) {
 }
 
 // Helper function to poll for hair swap result
-async function pollHairSwapResult(pollUrl: string, requestId: string, maxAttempts = 30): Promise<string> {
+async function pollHairSwapResult(pollUrl: string, requestId: string, maxAttempts = 120): Promise<string> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       console.log(`Polling attempt ${attempt + 1}/${maxAttempts} for request ${requestId}`);
@@ -32,14 +32,14 @@ async function pollHairSwapResult(pollUrl: string, requestId: string, maxAttempt
         throw new Error('Hair swap processing failed');
       }
 
-      // Wait 2 seconds before next poll
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait 5 seconds before next poll (give complex AI workflow more time)
+      await new Promise(resolve => setTimeout(resolve, 5000));
     } catch (error) {
       console.error(`Poll attempt ${attempt + 1} failed:`, error);
       if (attempt === maxAttempts - 1) {
         throw error;
       }
-      await new Promise(resolve => setTimeout(resolve, 2000));
+              await new Promise(resolve => setTimeout(resolve, 5000));
     }
   }
   
@@ -64,12 +64,23 @@ export async function POST(request: NextRequest) {
 
     console.log('Request parameters:', { 
       faceSwappedImageProvided: !!faceSwappedImageUrl, 
-      userOriginalImageProvided: !!userOriginalImageUrl 
+      userOriginalImageProvided: !!userOriginalImageUrl,
+      faceSwappedImageUrl: faceSwappedImageUrl?.substring(0, 100) + '...', // Log first 100 chars
+      userOriginalImageUrl: userOriginalImageUrl?.substring(0, 100) + '...' // Log first 100 chars
     });
 
     if (!faceSwappedImageUrl || !userOriginalImageUrl) {
       return NextResponse.json(
         { success: false, error: 'Missing required image URLs' },
+        { status: 400 }
+      );
+    }
+
+    // Validate that URLs are publicly accessible (not base64 data URLs)
+    if (faceSwappedImageUrl.startsWith('data:') || userOriginalImageUrl.startsWith('data:')) {
+      console.error('Hair swap API requires publicly accessible URLs, not base64 data URLs');
+      return NextResponse.json(
+        { success: false, error: 'Images must be publicly accessible URLs, not base64 data' },
         { status: 400 }
       );
     }
@@ -90,10 +101,12 @@ export async function POST(request: NextRequest) {
           'x-api-key': SEGMIND_API_KEY,
           'Content-Type': 'application/json'
         },
-        timeout: 30000 // 30 seconds timeout for initial request
+        timeout: 60000 // 60 seconds timeout for initial request
       });
 
       console.log('Segmind Hair Swap API initial response:', initResponse.data);
+      console.log('Response headers - remaining credits:', initResponse.headers['x-remaining-credits']);
+      console.log('Response status:', initResponse.status);
     } catch (error) {
       console.error('Segmind Hair Swap API error:', error);
       
