@@ -1,0 +1,22 @@
+# Fonts Directory
+
+This directory contains custom fonts for the Divine Pari project.
+
+## Parimatch Font
+Place the Parimatch Regular font files here:
+- Pari-Match-Regular.ttf
+- Pari-Match-Regular.woff
+- Pari-Match-Regular.woff2
+
+## Usage
+Import fonts in your CSS using:
+```css
+@font-face {
+  font-family: 'Pari-Match Regular';
+  src: url('/fonts/Pari-Match-Regular.woff2') format('woff2'),
+       url('/fonts/Pari-Match-Regular.woff') format('woff'),
+       url('/fonts/Pari-Match-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+``` 

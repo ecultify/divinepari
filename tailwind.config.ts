@@ -16,6 +16,7 @@ export default {
         sans: ["var(--font-geist-sans)"],
         mono: ["var(--font-geist-mono)"],
         poppins: ["var(--font-poppins)"],
+        parimatch: ["'Pari-Match Regular'", "sans-serif"],
       },
     },
   },

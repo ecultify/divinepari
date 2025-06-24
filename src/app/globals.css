@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Parimatch Font Declaration */
+@font-face {
+  font-family: 'Pari-Match Regular';
+  src: url('/fonts/Pari-Match Regular/Web Fonts/c03740f2ffb689fef4bbb9c26116c4c1.eot');
+  src: url('/fonts/Pari-Match Regular/Web Fonts/c03740f2ffb689fef4bbb9c26116c4c1.eot?#iefix') format('embedded-opentype'),
+       url('/fonts/Pari-Match Regular/Web Fonts/c03740f2ffb689fef4bbb9c26116c4c1.woff2') format('woff2'),
+       url('/fonts/Pari-Match Regular/Web Fonts/c03740f2ffb689fef4bbb9c26116c4c1.woff') format('woff'),
+       url('/fonts/Pari-Match Regular/Pari-Match Regular.ttf') format('truetype'),
+       url('/fonts/Pari-Match Regular/Web Fonts/c03740f2ffb689fef4bbb9c26116c4c1.svg#Pari-Match Regular') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   html {
     font-family: var(--font-geist-sans), system-ui, sans-serif;
@@ -48,6 +62,7 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   text-decoration: none;
+  font-family: 'Pari-Match Regular', sans-serif;
 }
 
 .btn:disabled {
@@ -63,6 +78,19 @@ body {
 .btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, #db2777, #7c3aed);
   transform: translateY(-1px);
+}
+
+/* Apply Parimatch font to all button elements */
+button {
+  font-family: 'Pari-Match Regular', sans-serif;
+}
+
+/* Apply Parimatch font to buttons with specific classes */
+.font-poppins button,
+.font-inter button,
+button.font-poppins,
+button.font-inter {
+  font-family: 'Pari-Match Regular', sans-serif !important;
 }
 
 .upload-area {
