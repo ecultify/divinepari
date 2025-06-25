@@ -67,13 +67,14 @@ export default function HomePage() {
                   className="relative px-8 md:px-12 xl:px-16 2xl:px-20 py-3 md:py-4 xl:py-5 2xl:py-6 font-bold text-black text-2xl md:text-3xl xl:text-4xl 2xl:text-5xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center"
                   style={{
                     background: '#F8FF13',
-                    border: '0.5px solid transparent',
+                    border: '3px solid transparent',
                     backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
                     backgroundOrigin: 'border-box',
                     backgroundClip: 'padding-box, border-box',
+                    borderRadius: '6.87px',
                   }}
                 >
-                  <span className="block transform skew-x-12 font-parimatch font-bold italic">GENERATE</span>
+                  <span className="block transform skew-x-12 font-parimatch font-bold italic">GENERATE NOW</span>
                 </button>
               </div>
             </div>
@@ -124,7 +125,7 @@ export default function HomePage() {
       >
         {/* Mobile Background Override */}
         <div 
-          className="absolute inset-0 block md:hidden bg-no-repeat bg-center"
+          className="absolute inset-0 block md:hidden bg-no-repeat bg-top"
           style={{
             backgroundImage: `url('/images/landing/backgrounds/mobile2.jpg')`,
             backgroundSize: '100% 100%',
@@ -136,16 +137,16 @@ export default function HomePage() {
           
           {/* Main Headline */}
           <div className="text-center mb-1 md:mb-2 mt-16 md:mt-20 xl:mt-24 2xl:mt-28">
-            <h2 className="font-parimatch text-white text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl uppercase mb-2">
+            <h2 className="font-parimatch text-white text-3xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl uppercase mb-2">
               Get Your Iconic Poster
             </h2>
-            <h2 className="font-parimatch text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl uppercase" style={{ color: '#F8FF13' }}>
+            <h2 className="font-parimatch text-3xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl uppercase" style={{ color: '#F8FF13' }}>
               in 3 Simple Steps
             </h2>
           </div>
           
           {/* Section 2 Start Image - Hidden on mobile, shown on desktop */}
-          <div className="mb-6 md:mb-8 xl:mb-10 2xl:mb-12 hidden md:block">
+          <div className="mb-6 md:mb-8 xl:mb-10 2xl:mb-12 hidden md:block relative" style={{ zIndex: 1, marginTop: '-10px' }}>
             <img 
               src="/images/landing/normalimages/section2startimage.png" 
               alt="Steps" 
@@ -156,8 +157,8 @@ export default function HomePage() {
           {/* Mobile Steps Section - Hidden on desktop */}
           <div className="block md:hidden w-full mx-auto mb-12 px-4">
             {/* Step 1 */}
-            <div className="flex flex-col items-center mb-12">
-              <div className="mb-8 w-full flex justify-center">
+            <div className="flex flex-col items-center mb-8">
+              <div className="mb-4 w-full flex justify-center">
                 <img 
                   src="/images/mobile/Mask group.png" 
                   alt="Pick your Scene" 
@@ -166,7 +167,7 @@ export default function HomePage() {
                 />
               </div>
               <div className="text-center">
-                <p className="font-poppins text-2xl xl:text-3xl 2xl:text-4xl font-bold mb-2" style={{ color: '#F8FF13' }}>
+                <p className="font-parimatch text-3xl font-normal mb-2" style={{ color: '#F8FF13' }}>
                   Pick your Scene
                 </p>
                 <p className="font-poppins text-white text-lg xl:text-xl 2xl:text-2xl">
@@ -176,8 +177,8 @@ export default function HomePage() {
             </div>
             
             {/* Step 2 */}
-            <div className="flex flex-col items-center mb-12">
-              <div className="mb-8 w-full flex justify-center">
+            <div className="flex flex-col items-center mb-8">
+              <div className="mb-4 w-full flex justify-center">
                 <img 
                   src="/images/mobile/Mask group (1).png" 
                   alt="Click a Selfie" 
@@ -186,7 +187,7 @@ export default function HomePage() {
                 />
               </div>
               <div className="text-center">
-                <p className="font-poppins text-2xl xl:text-3xl 2xl:text-4xl font-bold mb-2" style={{ color: '#F8FF13' }}>
+                <p className="font-parimatch text-3xl font-normal mb-2" style={{ color: '#F8FF13' }}>
                   Click a Selfie
                 </p>
                 <p className="font-poppins text-white text-lg xl:text-xl 2xl:text-2xl">
@@ -196,8 +197,8 @@ export default function HomePage() {
             </div>
             
             {/* Step 3 */}
-            <div className="flex flex-col items-center mb-16">
-              <div className="mb-8 w-full flex justify-center">
+            <div className="flex flex-col items-center mb-8">
+              <div className="mb-4 w-full flex justify-center">
                 <img 
                   src="/images/mobile/Mask group (2).png" 
                   alt="Download & Share" 
@@ -206,7 +207,7 @@ export default function HomePage() {
                 />
               </div>
               <div className="text-center">
-                <p className="font-poppins text-2xl xl:text-3xl 2xl:text-4xl font-bold mb-2" style={{ color: '#F8FF13' }}>
+                <p className="font-parimatch text-3xl font-normal mb-2" style={{ color: '#F8FF13' }}>
                   Download & Share
                 </p>
                 <p className="font-poppins text-white text-lg xl:text-xl 2xl:text-2xl">
@@ -217,16 +218,17 @@ export default function HomePage() {
           </div>
           
           {/* Generate Now Button */}
-          <div className="mb-8 md:mb-10 xl:mb-12 2xl:mb-16" style={{ marginTop: '62px' }}>
+          <div className="mb-8 md:mb-10 xl:mb-12 2xl:mb-16" style={{ marginTop: '8px' }}>
             <button 
               onClick={() => window.location.href = '/generate'}
               className="relative px-8 md:px-12 xl:px-16 2xl:px-20 py-3 md:py-4 xl:py-5 2xl:py-6 font-normal text-black text-2xl md:text-3xl xl:text-4xl 2xl:text-5xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center"
               style={{
                 background: '#F8FF13',
-                border: '0.5px solid transparent',
+                border: '3px solid transparent',
                 backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
                 backgroundOrigin: 'border-box',
                 backgroundClip: 'padding-box, border-box',
+                borderRadius: '6.87px',
               }}
             >
               <span className="block transform skew-x-12 font-parimatch font-bold italic">GENERATE NOW</span>
@@ -235,47 +237,62 @@ export default function HomePage() {
           
           {/* Share Your Poster Headline - Positioned with increased spacing below GENERATE NOW button */}
           <div className="w-full text-center" style={{ marginTop: '60px', zIndex: 9998 }}>
-            <h3 className="font-parimatch text-white text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl uppercase leading-tight">
+            <h3 className="font-parimatch text-white text-2xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl uppercase leading-tight">
               Share Your Poster & Win<br />
               <span style={{ color: '#F8FF13' }}>Limited-Edition Merch from DIVINE x Parimatch!</span>
             </h3>
           </div>
           
+
+        </div>
+      </section>
+
+      {/* New Shirts Section - Black Background */}
+      <section 
+        className="relative w-full bg-black overflow-visible" 
+        style={{ 
+          zIndex: 4, 
+          height: '40vh',
+          minHeight: '300px'
+        }}
+      >
+        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-4 md:px-6 overflow-visible">
+          
           {/* Mobile Layout - Shirts and How It Works */}
-          <div className="block md:hidden w-full max-w-sm mx-auto mb-8">
+          <div className="block md:hidden w-full max-w-sm mx-auto">
             {/* Shirts Image */}
             <div className="flex justify-center mb-6">
               <img 
                 src="/images/landing/normalimages/shirts.png" 
                 alt="Limited Edition Merch" 
-                className="max-w-full h-auto object-contain"
+                className="max-w-full h-auto object-contain scale-115"
               />
             </div>
             
             {/* How It Works - Center aligned title, left aligned content */}
             <div className="text-white font-poppins mb-6">
-              <h4 className="text-xl xl:text-2xl 2xl:text-3xl mb-4 text-center font-parimatch" style={{ color: '#F8FF13' }}>
+              <h4 className="text-3xl xl:text-3xl 2xl:text-4xl mb-4 text-center font-parimatch" style={{ color: '#F8FF13' }}>
                 HOW IT WORKS:
               </h4>
               
-              <div className="space-y-3 text-sm xl:text-base 2xl:text-lg text-left">
+              <div className="space-y-3 text-base xl:text-lg 2xl:text-xl text-left">
                 <div className="flex items-start space-x-2">
-                  <span className="font-bold text-base xl:text-lg 2xl:text-xl" style={{ color: '#F8FF13' }}>1.</span>
+                  <span className="font-bold text-lg xl:text-xl 2xl:text-2xl" style={{ color: '#F8FF13' }}>1.</span>
                   <span>Upload poster to your Instagram feed</span>
                 </div>
                 
                 <div className="flex items-start space-x-2">
-                  <span className="font-bold text-base xl:text-lg 2xl:text-xl" style={{ color: '#F8FF13' }}>2.</span>
+                  <span className="font-bold text-lg xl:text-xl 2xl:text-2xl" style={{ color: '#F8FF13' }}>2.</span>
                   <span>Use the hashtag <span className="font-bold">#DIVINExparimatch</span></span>
                 </div>
                 
                 <div className="flex items-start space-x-2">
-                  <span className="font-bold text-base xl:text-lg 2xl:text-xl" style={{ color: '#F8FF13' }}>3.</span>
+                  <span className="font-bold text-lg xl:text-xl 2xl:text-2xl" style={{ color: '#F8FF13' }}>3.</span>
                   <span>Tag <span className="font-bold" style={{ color: '#F8FF13' }}>@playwithparimatch</span> in your post</span>
                 </div>
               </div>
               
-              <div className="mt-4 text-sm xl:text-base 2xl:text-lg text-left">
+              <div className="mt-4 text-base xl:text-lg 2xl:text-xl text-left">
                 <p className="mb-2">
                   <span className="font-bold">Parimatch will select 3 lucky winners each week!</span>
                 </p>
@@ -285,23 +302,17 @@ export default function HomePage() {
               </div>
             </div>
             
-            {/* Campaign Date */}
-            <div className="text-center mb-6">
-              <p className="font-poppins text-white text-sm xl:text-base 2xl:text-lg">
-                Campaign runs until date: <span className="font-bold">2025</span>
-              </p>
-            </div>
           </div>
           
-          {/* Desktop Layout - Two Column Grid - Shirts and How It Works - Relative positioned with overflow */}
-          <div className="hidden md:grid w-full max-w-4xl lg:max-w-5xl mx-auto grid-cols-1 lg:grid-cols-5 gap-6 md:gap-8 items-center relative" style={{ marginTop: '120px', marginBottom: '-150px', zIndex: 10 }}>
+          {/* Desktop Layout - Two Column Grid - Shirts and How It Works */}
+          <div className="hidden md:grid w-full max-w-5xl lg:max-w-6xl mx-auto grid-cols-1 lg:grid-cols-5 gap-8 md:gap-10 items-center">
             
             {/* Left Column - Shirts Image (3/5 width) */}
             <div className="lg:col-span-3 flex justify-center relative">
               <img 
                 src="/images/landing/normalimages/shirts.png" 
                 alt="Limited Edition Merch" 
-                className="max-w-full h-auto object-contain w-full"
+                className="max-w-full h-auto object-contain w-full scale-115"
               />
             </div>
             
@@ -324,13 +335,13 @@ export default function HomePage() {
                 
                 <div className="flex items-start space-x-2">
                   <span className="font-bold text-base md:text-lg xl:text-xl 2xl:text-2xl" style={{ color: '#F8FF13' }}>3.</span>
-                  <span>Tag <span className="font-bold" style={{ color: '#F8FF13' }}>@playwithparimatch</span> in your post</span>
+                  <span>Tag <span className="font-bold italic" style={{ color: '#F8FF13', fontSize: '1.25em' }}>@playwithparimatch</span> in your post</span>
                 </div>
               </div>
               
               <div className="mt-4 md:mt-6 xl:mt-8 2xl:mt-10 text-sm md:text-base lg:text-base xl:text-lg 2xl:text-xl">
                 <p className="mb-2">
-                  <span className="font-bold">Parimatch will select 3 lucky winners each week!</span>
+                  <span className="font-bold">Parimatch will select <span className="font-bold italic" style={{ color: '#F8FF13', fontSize: '1.25em' }}>3 lucky winners</span> each week!</span>
                 </p>
                 <p>
                   Your name could be on that list—drop your poster and let fate decide!
@@ -343,19 +354,18 @@ export default function HomePage() {
 
       {/* Section 3 - Gallery Section with section3.jpg Background */}
       <section 
-        className="relative w-full bg-no-repeat bg-center"
+        className="relative w-full bg-no-repeat bg-top"
         style={{
           backgroundImage: `url('/images/landing/backgrounds/section3.jpg')`,
           backgroundSize: '100% 100%',
           minHeight: '140vh',
           aspectRatio: 'auto',
-          zIndex: 1,
-          paddingTop: '200px',
+          zIndex: 3,
         }}
       >
         {/* Mobile Background Override */}
         <div 
-          className="absolute inset-0 block md:hidden bg-no-repeat bg-center"
+          className="absolute inset-0 block md:hidden bg-no-repeat bg-top"
           style={{
             backgroundImage: `url('/images/landing/backgrounds/mobile3.jpg')`,
             backgroundSize: '100% 100%',
@@ -367,19 +377,11 @@ export default function HomePage() {
         <div className="relative z-10 w-full h-full flex flex-col items-center px-4 md:px-6 py-12 md:py-16">
           
           {/* Gallery Title - with spacing adjusted for overlapping content */}
-          <div className="text-center mb-8 md:mb-10 xl:mb-12 2xl:mb-16 gallery-title-container" style={{ marginTop: '256px' }}>
-            <h2 className="font-parimatch text-white text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl">
+          <div className="text-center mb-8 md:mb-10 xl:mb-12 2xl:mb-16 gallery-title-container mt-60 md:mt-42 lg:mt-48 xl:mt-52">
+            <h2 className="font-parimatch text-white text-3xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl">
               GALLERY
             </h2>
           </div>
-          
-          <style jsx>{`
-            @media (min-width: 768px) {
-              .gallery-title-container {
-                margin-top: 60px !important;
-              }
-            }
-          `}</style>
           
           {/* 3-Column Poster Grid - Desktop Row, Mobile Carousel */}
           <div className="w-full max-w-5xl">
@@ -448,7 +450,7 @@ export default function HomePage() {
                             style={{ maxHeight: '500px' }}
                           />
                         </div>
-                        <h3 className="font-parimatch text-white text-base xl:text-lg 2xl:text-xl uppercase tracking-wide">
+                        <h3 className="font-parimatch text-white text-lg xl:text-lg 2xl:text-xl uppercase tracking-wide">
                           Millionaire In Da House
                         </h3>
                       </div>
@@ -465,7 +467,7 @@ export default function HomePage() {
                             style={{ maxHeight: '500px' }}
                           />
                         </div>
-                        <h3 className="font-parimatch text-white text-base xl:text-lg 2xl:text-xl uppercase tracking-wide">
+                        <h3 className="font-parimatch text-white text-lg xl:text-lg 2xl:text-xl uppercase tracking-wide">
                           Bollywood Boss
                         </h3>
                       </div>
@@ -482,7 +484,7 @@ export default function HomePage() {
                             style={{ maxHeight: '500px' }}
                           />
                         </div>
-                        <h3 className="font-parimatch text-white text-base xl:text-lg 2xl:text-xl uppercase tracking-wide">
+                        <h3 className="font-parimatch text-white text-lg xl:text-lg 2xl:text-xl uppercase tracking-wide">
                           Hip Hop Star
                         </h3>
                       </div>

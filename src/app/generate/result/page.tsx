@@ -342,34 +342,36 @@ function ResultPageContent() {
     return (
       <div className="w-full">
         <section 
-          className="relative w-full bg-no-repeat bg-center min-h-screen"
+          className="relative w-full bg-no-repeat bg-top min-h-screen"
           style={{
             backgroundImage: `url('/images/secondpage/Desktop.png')`,
-            backgroundSize: 'cover',
+            backgroundSize: '100% 100%',
           }}
         >
           {/* Mobile Background Override */}
           <div 
-            className="absolute inset-0 block md:hidden bg-no-repeat bg-center"
+            className="absolute inset-0 block md:hidden bg-no-repeat bg-top"
             style={{
               backgroundImage: `url('/images/mobile/mobile.png')`,
-              backgroundSize: 'cover',
+              backgroundSize: '100% 100%',
             }}
           />
           
           <div className="relative z-10 w-full h-full flex flex-col px-4 md:px-6 py-6">
             {/* Logo - Left on desktop, centered on mobile */}
-            <div className="flex justify-start md:justify-start justify-center mb-8" style={{ marginLeft: '0px md:50px' }}>
-              <button
-                onClick={() => window.location.href = '/'}
-                className="transition-all duration-200 hover:opacity-80"
-              >
-                <img 
-                  src="/images/landing/normalimages/parimatch.svg" 
-                  alt="Parimatch Logo" 
-                  className="h-16 md:h-16"
-                />
-              </button>
+            <div className="flex justify-start md:justify-start justify-center mb-8">
+              <div className="md:ml-12">
+                <button
+                  onClick={() => window.location.href = '/'}
+                  className="transition-all duration-200 hover:opacity-80"
+                >
+                  <img 
+                    src="/images/landing/normalimages/parimatch.svg" 
+                    alt="Parimatch Logo" 
+                    className="h-16 md:h-16"
+                  />
+                </button>
+              </div>
             </div>
             
             {/* Step Progress Indicator - Larger and closer to content */}
@@ -378,7 +380,7 @@ function ResultPageContent() {
                 {[1, 2, 3, 4].map((step, index) => (
                   <div key={step} className="flex items-center">
                     <div 
-                      className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center font-bold font-poppins text-sm md:text-base"
+                      className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center font-bold font-parimatch text-sm md:text-base"
                       style={{
                         borderColor: '#F8FF13',
                         backgroundColor: '#F8FF13',
@@ -450,34 +452,36 @@ function ResultPageContent() {
     return (
       <div className="w-full">
         <section 
-          className="relative w-full bg-no-repeat bg-center min-h-screen"
+          className="relative w-full bg-no-repeat bg-top min-h-screen"
           style={{
             backgroundImage: `url('/images/secondpage/Desktop.png')`,
-            backgroundSize: 'cover',
+            backgroundSize: '100% 100%',
           }}
         >
           {/* Mobile Background Override */}
           <div 
-            className="absolute inset-0 block md:hidden bg-no-repeat bg-center"
+            className="absolute inset-0 block md:hidden bg-no-repeat bg-top"
             style={{
               backgroundImage: `url('/images/mobile/mobile.png')`,
-              backgroundSize: 'cover',
+              backgroundSize: '100% 100%',
             }}
           />
           
           <div className="relative z-10 w-full h-full flex flex-col px-4 md:px-6 py-6">
             {/* Logo - Left on desktop, centered on mobile */}
-            <div className="flex justify-start md:justify-start justify-center mb-8" style={{ marginLeft: '0px md:50px' }}>
-              <button
-                onClick={() => window.location.href = '/'}
-                className="transition-all duration-200 hover:opacity-80"
-              >
-                <img 
-                  src="/images/landing/normalimages/parimatch.svg" 
-                  alt="Parimatch Logo" 
-                  className="h-16 md:h-16"
-                />
-              </button>
+            <div className="flex justify-start md:justify-start justify-center mb-8">
+              <div className="md:ml-12">
+                <button
+                  onClick={() => window.location.href = '/'}
+                  className="transition-all duration-200 hover:opacity-80"
+                >
+                  <img 
+                    src="/images/landing/normalimages/parimatch.svg" 
+                    alt="Parimatch Logo" 
+                    className="h-16 md:h-16"
+                  />
+                </button>
+              </div>
             </div>
             
             {/* Step Progress Indicator - Larger and closer to content */}
@@ -486,7 +490,7 @@ function ResultPageContent() {
                 {[1, 2, 3, 4].map((step, index) => (
                   <div key={step} className="flex items-center">
                     <div 
-                      className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center font-bold font-poppins text-sm md:text-base"
+                      className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center font-bold font-parimatch text-sm md:text-base"
                       style={{
                         borderColor: '#F8FF13',
                         backgroundColor: '#F8FF13',
@@ -552,18 +556,18 @@ function ResultPageContent() {
   return (
     <div className="w-full">
       <section 
-        className="relative w-full bg-no-repeat bg-center min-h-screen"
+        className="relative w-full bg-no-repeat bg-top min-h-screen"
         style={{
           backgroundImage: `url('/images/secondpage/Desktop.png')`,
-          backgroundSize: 'cover',
+          backgroundSize: '100% 100%',
         }}
       >
         {/* Mobile Background Override */}
         <div 
-          className="absolute inset-0 block md:hidden bg-no-repeat bg-center"
+          className="absolute inset-0 block md:hidden bg-no-repeat bg-top"
           style={{
             backgroundImage: `url('/images/mobile/mobile.png')`,
-            backgroundSize: 'cover',
+            backgroundSize: '100% 100%',
           }}
         />
         
@@ -590,7 +594,7 @@ function ResultPageContent() {
               {[1, 2, 3, 4].map((step, index) => (
                 <div key={step} className="flex items-center">
                   <div 
-                    className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center font-bold font-poppins text-sm md:text-sm"
+                    className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center font-bold font-parimatch text-base md:text-lg"
                     style={{
                       borderColor: '#F8FF13',
                       backgroundColor: '#F8FF13',
@@ -614,20 +618,14 @@ function ResultPageContent() {
           {/* Layout - Vertical on mobile, 2-column on desktop */}
           <div className="flex-1 flex flex-col lg:grid lg:grid-cols-2 gap-6 items-center max-w-sm md:max-w-none mx-auto lg:mx-0 lg:pl-8 lg:pr-8">
             {/* Generated Poster */}
-            <div className="flex justify-center lg:justify-end lg:transform lg:translate-x-[-100px]">
-              <div 
-                className="relative rounded-lg overflow-hidden"
-                style={{
-                  border: '1px solid #F8FF13',
-                  maxWidth: '300px',
-                  width: '100%',
-                }}
-              >
+            <div className="mb-8 flex justify-center">
+              <div className="relative" style={{ border: '4px solid #F8FF13', borderRadius: '8px', padding: '4px' }}>
                 {processedImage && (
                   <img 
                     src={processedImage} 
                     alt="Generated Poster" 
-                    className="w-full h-auto object-cover"
+                    className="w-56 md:max-w-md lg:max-w-lg xl:max-w-xl object-contain rounded-lg shadow-lg"
+                    style={{ maxWidth: '350px', height: 'auto' }}
                   />
                 )}
               </div>
@@ -636,13 +634,13 @@ function ResultPageContent() {
             {/* Content - Centered on mobile */}
             <div className="flex flex-col justify-center text-center lg:text-center lg:pl-4 lg:transform lg:translate-x-[-80px]">
               {/* Main Title */}
-              <h1 className="text-white text-base md:text-xl lg:text-2xl font-bold mb-3 md:mb-4 font-poppins">
+              <h1 className="text-white text-2xl md:text-3xl lg:text-4xl font-bold mb-4 md:mb-4 font-parimatch">
                 HERE&apos;S YOUR PERSONALIZED<br />
                 POSTER <span style={{ color: '#F8FF13' }}>WITH DIVINE HIMSELF!</span>
               </h1>
 
               {/* Description Text */}
-              <div className="text-white text-xs md:text-sm lg:text-sm mb-4 md:mb-6 font-poppins leading-tight">
+              <div className="text-white text-base md:text-base lg:text-base mb-6 md:mb-6 font-poppins leading-tight">
                 <p className="mb-0">
                   Download & participate in <span style={{ color: '#F8FF13' }}>#DIVINExParimatch</span>
                 </p>
@@ -654,42 +652,45 @@ function ResultPageContent() {
                 </p>
               </div>
 
-
-
               {/* Download Button */}
-              <div className="mb-4 md:mb-6">
-                <button
+              <div className="mb-6 flex justify-center">
+                <button 
                   onClick={handleDownload}
-                  disabled={loading}
-                  className="px-6 py-2 md:px-10 md:py-3 font-normal text-base md:text-lg uppercase tracking-wider transition-all duration-200 hover:scale-105 font-poppins disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative px-8 md:px-12 xl:px-16 2xl:px-20 py-4 md:py-4 xl:py-5 2xl:py-6 font-bold text-black text-xl md:text-xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center"
                   style={{
-                    background: loading ? '#666' : '#F8FF13',
-                    color: 'black',
-                    border: 'none',
-                    borderRadius: '5px',
+                    background: '#F8FF13',
+                    border: '3px solid transparent',
+                    backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    borderRadius: '6.87px',
                   }}
                 >
-                  DOWNLOAD
+                  <span className="block transform skew-x-12 font-parimatch font-bold italic">DOWNLOAD</span>
                 </button>
               </div>
 
               {/* Try Again Section */}
-              <div className="text-white font-poppins">
-                <p className="text-xs md:text-sm lg:text-sm mb-0">Not vibing with this one?</p>
-                <p className="text-xs md:text-sm lg:text-sm mb-3">Hit refresh and let&apos;s create another legend!</p>
+              <div className="text-white font-poppins text-center">
+                <p className="text-base md:text-base lg:text-base mb-1">Not vibing with this one?</p>
+                <p className="text-base md:text-base lg:text-base mb-4">Hit refresh and let&apos;s create another legend!</p>
                 
-                <button
-                  onClick={handleTryAgain}
-                  className="px-6 py-2 md:px-10 md:py-3 font-normal text-base md:text-lg uppercase tracking-wider transition-all duration-200 hover:scale-105 font-poppins"
-                  style={{
-                    background: '#F8FF13',
-                    color: 'black',
-                    border: 'none',
-                    borderRadius: '5px',
-                  }}
-                >
-                  TRY AGAIN
-                </button>
+                <div className="flex justify-center">
+                  <button 
+                    onClick={handleTryAgain}
+                    className="relative px-8 md:px-12 xl:px-16 2xl:px-20 py-4 md:py-4 xl:py-5 2xl:py-6 font-bold text-black text-xl md:text-xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center"
+                    style={{
+                      background: '#F8FF13',
+                      border: '3px solid transparent',
+                      backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                      backgroundOrigin: 'border-box',
+                      backgroundClip: 'padding-box, border-box',
+                      borderRadius: '6.87px',
+                    }}
+                  >
+                    <span className="block transform skew-x-12 font-parimatch font-bold italic">TRY AGAIN</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
