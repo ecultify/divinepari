@@ -68,7 +68,7 @@ export default function GenderSelectionPage() {
       <section 
         className="relative w-full bg-no-repeat bg-top min-h-screen"
         style={{
-          backgroundImage: `url('/images/secondpage/Desktop.png')`,
+          backgroundImage: `url('/images/secondpage/Desktop.avif')`,
           backgroundSize: '100% 100%',
         }}
       >
@@ -76,7 +76,7 @@ export default function GenderSelectionPage() {
         <div 
           className="absolute inset-0 block md:hidden bg-no-repeat bg-center"
           style={{
-            backgroundImage: `url('/images/mobile/mobile.png')`,
+            backgroundImage: `url('/images/mobile/mobile.avif')`,
             backgroundSize: 'cover',
           }}
         />
@@ -188,26 +188,51 @@ export default function GenderSelectionPage() {
 
               {/* Submit Button */}
               <div className="mt-16 md:mt-12 flex justify-center">
+                {/* Mobile Continue Button */}
                 <button 
                   onClick={handleContinue}
                   disabled={!selectedGender}
-                  className="font-normal text-lg md:text-xl xl:text-2xl 2xl:text-3xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 font-poppins"
+                  className="relative transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center lg:hidden"
                   style={{
                     background: selectedGender ? '#F8FF13' : '#585858',
-                    color: selectedGender ? 'black' : 'black',
-                    border: selectedGender ? '0.5px solid transparent' : 'none',
+                    border: '3px solid transparent',
                     backgroundImage: selectedGender 
                       ? 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)'
                       : 'none',
-                    backgroundOrigin: selectedGender ? 'border-box' : 'initial',
-                    backgroundClip: selectedGender ? 'padding-box, border-box' : 'initial',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    borderRadius: '3.29px',
+                    padding: '16px 48px',
                     cursor: selectedGender ? 'pointer' : 'not-allowed',
                     opacity: selectedGender ? 1 : 0.7,
-                    width: '263px',
-                    height: '63px',
                   }}
                 >
-                  <span className="block transform skew-x-12">CONTINUE</span>
+                  <span className="block transform skew-x-12 font-parimatch font-bold text-black text-3xl">CONTINUE</span>
+                </button>
+                
+                {/* Desktop Continue Button with Custom Dimensions */}
+                <button 
+                  onClick={handleContinue}
+                  disabled={!selectedGender}
+                  className="hidden lg:flex relative transform -skew-x-12 transition-all duration-200 hover:scale-105 items-center justify-center"
+                  style={{
+                    background: selectedGender ? '#F8FF13' : '#585858',
+                    border: '3px solid transparent',
+                    backgroundImage: selectedGender 
+                      ? 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)'
+                      : 'none',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    borderRadius: '3.29px',
+                    width: '263px',
+                    height: '63px',
+                    cursor: selectedGender ? 'pointer' : 'not-allowed',
+                    opacity: selectedGender ? 1 : 0.7,
+                  }}
+                >
+                  <span className="block transform skew-x-12 font-parimatch font-bold text-black w-32 h-22 flex items-center justify-center text-3xl">
+                    CONTINUE
+                  </span>
                 </button>
               </div>
             </div>

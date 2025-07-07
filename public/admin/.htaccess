@@ -1,0 +1,25 @@
+# Prevent directory listing
+Options -Indexes
+
+# Redirect /admin to /admin/login.php
+RewriteEngine On
+RewriteBase /admin/
+RewriteRule ^$ login.php [L]
+
+# Ensure PHP files are processed
+<FilesMatch "\.php$">
+    SetHandler application/x-httpd-php
+</FilesMatch>
+
+# Basic security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Prevent access to config.php directly
+<Files "config.php">
+    Order allow,deny
+    Deny from all
+</Files> 

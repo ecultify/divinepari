@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Page</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 10px; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>API Debug Test Page</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Debug API with POST</h2>
+        <button onclick="testDebugAPI()">Test Debug API</button>
+        <div id="debug-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Face Swap API with File</h2>
+        <input type="file" id="test-image" accept="image/*">
+        <button onclick="testFaceSwapAPI()">Test Face Swap API</button>
+        <div id="faceswap-result"></div>
+    </div>
+
+    <script>
+        async function testDebugAPI() {
+            const resultDiv = document.getElementById('debug-result');
+            resultDiv.innerHTML = '<p>Testing debug API...</p>';
+            
+            try {
+                const formData = new FormData();
+                formData.append('posterName', 'Option 1M.avif');
+                formData.append('sessionId', 'test_session_123');
+                
+                // Create a small test image blob
+                const canvas = document.createElement('canvas');
+                canvas.width = 100;
+                canvas.height = 100;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'red';
+                ctx.fillRect(0, 0, 100, 100);
+                
+                canvas.toBlob(function(blob) {
+                    formData.append('userImage', blob, 'test.jpg');
+                    
+                    fetch('/api/process-faceswap-debug.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.text())
+                    .then(data => {
+                        resultDiv.innerHTML = `
+                            <h3 class="success">Debug API Response:</h3>
+                            <pre>${data}</pre>
+                        `;
+                    })
+                    .catch(error => {
+                        resultDiv.innerHTML = `
+                            <h3 class="error">Error:</h3>
+                            <pre>${error.message}</pre>
+                        `;
+                    });
+                }, 'image/jpeg');
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">Error:</h3>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        async function testFaceSwapAPI() {
+            const resultDiv = document.getElementById('faceswap-result');
+            const fileInput = document.getElementById('test-image');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.innerHTML = '<p class="error">Please select an image file first!</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Testing face swap API...</p>';
+            
+            try {
+                const formData = new FormData();
+                formData.append('userImage', fileInput.files[0]);
+                formData.append('posterName', 'Option 1M.avif');
+                formData.append('sessionId', 'test_session_' + Date.now());
+                
+                const response = await fetch('/api/process-faceswap.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.text();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <h3 class="success">Face Swap API Response:</h3>
+                        <pre>${data}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h3 class="error">Face Swap API Error (${response.status}):</h3>
+                        <pre>${data}</pre>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">Error:</h3>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html> 

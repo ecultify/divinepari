@@ -36,8 +36,8 @@ function PosterSelectionPageContent() {
   }, [gender, router]);
 
   const posters = gender === 'male' 
-    ? ['Option 1M.jpg', 'Option 2M.jpg', 'Option 3M.jpg']
-    : ['Option 1F.jpg', 'Option 2F.jpg', 'Option 3F.jpg'];
+    ? ['Option1M.avif', 'Option2M.avif', 'Option3M.avif']
+    : ['Option1F.avif', 'Option2F.avif', 'Option3F.avif'];
 
   const handlePosterSelect = async (poster: string) => {
     setSelectedPoster(poster);
@@ -78,7 +78,7 @@ function PosterSelectionPageContent() {
       <section 
         className="relative w-full bg-no-repeat bg-top min-h-screen"
         style={{
-          backgroundImage: `url('/images/secondpage/Desktop.png')`,
+          backgroundImage: `url('/images/secondpage/Desktop.avif')`,
           backgroundSize: '100% 100%',
         }}
       >
@@ -86,7 +86,7 @@ function PosterSelectionPageContent() {
         <div 
           className="absolute inset-0 block md:hidden bg-no-repeat bg-top"
           style={{
-            backgroundImage: `url('/images/mobile/mobile.png')`,
+            backgroundImage: `url('/images/mobile/mobile.avif')`,
             backgroundSize: '100% 100%',
           }}
         />
@@ -183,23 +183,48 @@ function PosterSelectionPageContent() {
 
               {/* Submit Button */}
               <div className="flex justify-center">
+                {/* Desktop Button */}
                 <button 
                   onClick={handleContinue}
                   disabled={!selectedPoster}
-                  className="font-normal text-lg md:text-xl xl:text-2xl 2xl:text-3xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 font-poppins"
+                  className="hidden md:flex items-center justify-center font-bold text-3xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105 font-parimatch"
                   style={{
                     background: selectedPoster ? '#F8FF13' : '#585858',
-                    color: selectedPoster ? 'black' : 'black',
-                    border: selectedPoster ? '0.5px solid transparent' : 'none',
+                    color: 'black',
+                    border: '3px solid transparent',
                     backgroundImage: selectedPoster 
                       ? 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)'
                       : 'none',
                     backgroundOrigin: selectedPoster ? 'border-box' : 'initial',
                     backgroundClip: selectedPoster ? 'padding-box, border-box' : 'initial',
-                    cursor: selectedPoster ? 'pointer' : 'not-allowed',
-                    opacity: selectedPoster ? 1 : 0.7,
+                    borderRadius: '3.29px',
                     width: '263px',
                     height: '63px',
+                    cursor: selectedPoster ? 'pointer' : 'not-allowed',
+                    opacity: selectedPoster ? 1 : 0.7,
+                  }}
+                >
+                  <span className="block transform skew-x-12">CONTINUE</span>
+                </button>
+                
+                {/* Mobile Button */}
+                <button 
+                  onClick={handleContinue}
+                  disabled={!selectedPoster}
+                  className="flex md:hidden items-center justify-center font-bold text-3xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105 font-parimatch"
+                  style={{
+                    background: selectedPoster ? '#F8FF13' : '#585858',
+                    color: 'black',
+                    border: '3px solid transparent',
+                    backgroundImage: selectedPoster 
+                      ? 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)'
+                      : 'none',
+                    backgroundOrigin: selectedPoster ? 'border-box' : 'initial',
+                    backgroundClip: selectedPoster ? 'padding-box, border-box' : 'initial',
+                    borderRadius: '3.29px',
+                    padding: '16px 48px',
+                    cursor: selectedPoster ? 'pointer' : 'not-allowed',
+                    opacity: selectedPoster ? 1 : 0.7,
                   }}
                 >
                   <span className="block transform skew-x-12">CONTINUE</span>

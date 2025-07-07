@@ -37,6 +37,9 @@ export interface GenerationResult {
   user_image_path?: string
   generated_image_url?: string
   generated_image_path?: string
+  user_name?: string
+  user_email?: string
+  email_sent?: boolean
   created_at?: string
   error_message?: string
 }

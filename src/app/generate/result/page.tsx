@@ -19,6 +19,52 @@ function ResultPageContent() {
   const gender = searchParams.get('gender');
   const selectedPoster = searchParams.get('poster');
 
+  // Email notification function
+  const sendEmailNotification = async (sessionId: string, posterUrl: string) => {
+    try {
+      const userEmail = localStorage.getItem('userEmail');
+      const userName = localStorage.getItem('userName');
+      
+      if (!userEmail) {
+        console.log('No email found in localStorage, skipping email notification');
+        return;
+      }
+
+      console.log('Sending email notification to:', userEmail);
+      
+      // Use PHP endpoint directly for Hostinger compatibility
+      // On Hostinger shared hosting, only PHP endpoints work reliably
+      const response = await fetch('/api/send-email.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: userEmail,
+          userName: userName || 'there',
+          posterUrl: posterUrl,
+          sessionId: sessionId
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('Email sent successfully');
+        // Update generation result to mark email as sent
+        await updateGenerationResult(sessionId, {
+          user_email: userEmail,
+          user_name: userName || undefined,
+          email_sent: true
+        });
+      } else {
+        console.error('Email sending failed:', result.error);
+      }
+    } catch (error) {
+      console.error('Error sending email notification:', error);
+    }
+  };
+
   useEffect(() => {
     // Get user image from localStorage
     const storedUserImage = localStorage.getItem('userImage');
@@ -32,7 +78,9 @@ function ResultPageContent() {
     }
 
     setSessionId(currentSessionId);
+    if (storedUserImage) {
     setUserImage(storedUserImage);
+    }
     
     // Track result page visit
     if (currentSessionId) {
@@ -44,7 +92,9 @@ function ResultPageContent() {
       });
     }
 
+    if (storedUserImage && storedPoster && storedGender) {
     processFaceSwap(storedUserImage, storedPoster, storedGender, currentSessionId);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
@@ -61,7 +111,7 @@ function ResultPageContent() {
       const blob = await response.blob();
       
       console.log('User image blob size:', blob.size);
-      setProgress(30);
+      setProgress(20);
 
       // Create FormData
       const formData = new FormData();
@@ -69,9 +119,19 @@ function ResultPageContent() {
       formData.append('posterName', posterName);
       formData.append('sessionId', sessionId);
 
-      setProgress(50);
+      setProgress(30);
 
       console.log('Calling face swap API...');
+
+      // Start progressive loading animation while API is processing
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev < 85) {
+            return prev + Math.random() * 2; // Slowly increment by 0-2% each time
+          }
+          return prev; // Stop at 85% until API completes
+        });
+      }, 500); // Update every 500ms
 
       // Call our faceswap API
       const faceSwapResponse = await fetch('/api/process-faceswap', {
@@ -79,24 +139,38 @@ function ResultPageContent() {
         body: formData,
       });
 
-      setProgress(70);
+      // Clear the progressive loading interval
+      clearInterval(progressInterval);
 
       console.log('Face swap API response status:', faceSwapResponse.status);
 
       if (!faceSwapResponse.ok) {
-        const errorData = await faceSwapResponse.json();
-        console.error('Face swap API error:', errorData);
-        throw new Error(errorData.error || `HTTP ${faceSwapResponse.status}: Face swap processing failed`);
+        let errorMessage = 'Face swap processing failed. Please try again.';
+        
+        try {
+          const errorData = await faceSwapResponse.json();
+          console.error('Face swap API error:', errorData);
+          // Use a user-friendly message instead of raw API error
+          errorMessage = errorData.error && typeof errorData.error === 'string' 
+            ? 'Processing failed. Please try again with a different photo.' 
+            : 'Face swap service is temporarily unavailable. Please try again.';
+        } catch (parseError) {
+          console.error('Error parsing API response:', parseError);
+          errorMessage = 'Service temporarily unavailable. Please try again later.';
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = await faceSwapResponse.json();
       
       console.log('Face swap result:', { success: result.success, hasImage: !!result.imageUrl });
-      setProgress(90);
 
       if (result.success && result.imageUrl) {
+        // Quickly complete progress to 100%
+        setProgress(100);
+        
         setOriginalFaceSwapImage(result.imageUrl); // Store face swap result
-        setProgress(75); // Face swap done, now starting hair swap
         console.log('Face swap completed successfully, starting hair swap...');
         
         // Upload face-swapped result to Supabase storage
@@ -132,28 +206,40 @@ function ResultPageContent() {
         
         // FaceSwap v4 handles both face and hair swapping in one call
         setProcessedImage(result.imageUrl);
-        setProgress(100);
+        
+        // Send email notification
+        await sendEmailNotification(sessionId, faceSwapUploadResult?.url || result.imageUrl);
+        
+        // Brief delay to show 100% completion, then proceed
+        setTimeout(() => {
+          setLoading(false);
+        }, 800);
+        
         console.log('Face and hair swap completed successfully with FaceSwap v4!');
       } else {
+        clearInterval(progressInterval);
         throw new Error(result.error || 'Processing failed - no image returned');
       }
     } catch (error) {
       console.error('Face swap error:', error);
-      let errorMessage = 'An error occurred during processing';
+      let errorMessage = 'Processing failed. Please try again.';
       
       if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      }
-      
-      // Provide more specific error messages
-      if (errorMessage.includes('API configuration error')) {
-        errorMessage = 'Service temporarily unavailable. Please try again later.';
-      } else if (errorMessage.includes('timed out')) {
-        errorMessage = 'Processing is taking longer than expected. Please try again.';
-      } else if (errorMessage.includes('Face swap service unavailable')) {
-        errorMessage = 'AI service is currently unavailable. Please try again in a few minutes.';
+        // Filter out technical error messages and provide user-friendly ones
+        const originalMessage = error.message.toLowerCase();
+        
+        if (originalMessage.includes('api configuration') || originalMessage.includes('api key')) {
+          errorMessage = 'Service temporarily unavailable. Please try again later.';
+        } else if (originalMessage.includes('timeout') || originalMessage.includes('timed out')) {
+          errorMessage = 'Processing is taking longer than expected. Please try again.';
+        } else if (originalMessage.includes('network') || originalMessage.includes('connection')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (originalMessage.includes('invalid') || originalMessage.includes('failed to')) {
+          errorMessage = 'Processing failed. Please try again with a different photo.';
+        } else {
+          // For any other error, use a generic message
+          errorMessage = 'Something went wrong. Please try again.';
+        }
       }
       
       setError(errorMessage);
@@ -301,6 +387,9 @@ function ResultPageContent() {
             storage_path: uploadResult?.path,
             timestamp: new Date().toISOString()
           });
+
+          // Send email notification
+          await sendEmailNotification(sessionId, uploadResult?.url || result.imageUrl);
         }
       } else {
         throw new Error(result.error || 'Hair swap failed - no image returned');
@@ -327,6 +416,9 @@ function ResultPageContent() {
           timestamp: new Date().toISOString()
         });
       }
+
+      // Send email notification with face-swapped result
+      await sendEmailNotification(sessionId, faceSwappedImageUrl);
     }
   };
 
@@ -344,7 +436,7 @@ function ResultPageContent() {
         <section 
           className="relative w-full bg-no-repeat bg-top min-h-screen"
           style={{
-            backgroundImage: `url('/images/secondpage/Desktop.png')`,
+            backgroundImage: `url('/images/secondpage/Desktop.avif')`,
             backgroundSize: '100% 100%',
           }}
         >
@@ -352,7 +444,7 @@ function ResultPageContent() {
           <div 
             className="absolute inset-0 block md:hidden bg-no-repeat bg-top"
             style={{
-              backgroundImage: `url('/images/mobile/mobile.png')`,
+              backgroundImage: `url('/images/mobile/mobile.avif')`,
               backgroundSize: '100% 100%',
             }}
           />
@@ -404,33 +496,59 @@ function ResultPageContent() {
             {/* Custom Loading Modal */}
             <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
               <div 
-                className="relative px-8 py-12 md:px-16 md:py-8 rounded-lg"
+                className="relative px-8 py-8 md:px-16 md:py-12 rounded-lg w-96 lg:w-[800px] xl:w-[900px] flex flex-col"
                 style={{
                   border: '2px solid #F8FF13',
                   backgroundColor: 'rgba(17, 17, 18, 0.95)',
-                  minWidth: '320px',
-                  maxWidth: '500px',
                   minHeight: '200px',
                 }}
               >
                 {/* Close button */}
                 <button
                   className="absolute top-2 right-3 text-white hover:text-gray-300 text-xl font-bold"
-                  style={{ fontSize: '24px', lineHeight: '1' }}
+                  style={{ 
+                    fontSize: '24px', 
+                    lineHeight: '1',
+                    fontFamily: 'Arial, sans-serif',
+                    fontStyle: 'normal',
+                    fontWeight: 'normal',
+                    transform: 'none'
+                  }}
                 >
                   ×
                 </button>
 
-                {/* Loading content */}
-                <div className="text-center">
-                  <p className="text-white text-lg font-poppins mb-6">
+                {/* Loading content - Properly centered */}
+                <div className="flex-1 flex flex-col items-center justify-center text-center">
+                  {/* Mobile text with line break */}
+                  <p className="text-white text-lg font-poppins mb-6 block lg:hidden text-center">
+                    {progress < 75 ? (
+                      <>
+                        Crafting your debut with your<br />
+                        favorite artist...
+                      </>
+                    ) : progress < 100 ? (
+                      <>
+                        Adding your unique hairstyle<br />
+                        to the poster...
+                      </>
+                    ) : (
+                      <>
+                        Creating your personalized<br />
+                        poster...
+                      </>
+                    )}
+                  </p>
+                  
+                  {/* Desktop text in single line */}
+                  <p className="text-white text-lg font-poppins mb-6 hidden lg:block text-center">
                     {progress < 75 ? 'Crafting your debut with your favorite artist...' : 
                      progress < 100 ? 'Adding your unique hairstyle to the poster...' : 
                      'Creating your personalized poster...'}
                   </p>
                   
                   {/* Progress Bar */}
-                  <div className="w-full bg-gray-600 rounded-full h-3">
+                  <div className="w-full max-w-md lg:max-w-lg bg-gray-600 rounded-full h-3 mx-auto">
                     <div 
                       className="h-3 rounded-full transition-all duration-500"
                       style={{
@@ -454,7 +572,7 @@ function ResultPageContent() {
         <section 
           className="relative w-full bg-no-repeat bg-top min-h-screen"
           style={{
-            backgroundImage: `url('/images/secondpage/Desktop.png')`,
+            backgroundImage: `url('/images/secondpage/Desktop.avif')`,
             backgroundSize: '100% 100%',
           }}
         >
@@ -462,7 +580,7 @@ function ResultPageContent() {
           <div 
             className="absolute inset-0 block md:hidden bg-no-repeat bg-top"
             style={{
-              backgroundImage: `url('/images/mobile/mobile.png')`,
+              backgroundImage: `url('/images/mobile/mobile.avif')`,
               backgroundSize: '100% 100%',
             }}
           />
@@ -558,7 +676,7 @@ function ResultPageContent() {
       <section 
         className="relative w-full bg-no-repeat bg-top min-h-screen"
         style={{
-          backgroundImage: `url('/images/secondpage/Desktop.png')`,
+          backgroundImage: `url('/images/secondpage/Desktop.avif')`,
           backgroundSize: '100% 100%',
         }}
       >
@@ -566,7 +684,7 @@ function ResultPageContent() {
         <div 
           className="absolute inset-0 block md:hidden bg-no-repeat bg-top"
           style={{
-            backgroundImage: `url('/images/mobile/mobile.png')`,
+            backgroundImage: `url('/images/mobile/mobile.avif')`,
             backgroundSize: '100% 100%',
           }}
         />
@@ -616,79 +734,122 @@ function ResultPageContent() {
           </div>
 
           {/* Layout - Vertical on mobile, 2-column on desktop */}
-          <div className="flex-1 flex flex-col lg:grid lg:grid-cols-2 gap-6 items-center max-w-sm md:max-w-none mx-auto lg:mx-0 lg:pl-8 lg:pr-8">
-            {/* Generated Poster */}
-            <div className="mb-8 flex justify-center">
-              <div className="relative" style={{ border: '4px solid #F8FF13', borderRadius: '8px', padding: '4px' }}>
+          <div className="flex-1 flex flex-col lg:grid lg:grid-cols-2 gap-6 items-center max-w-sm md:max-w-none mx-auto lg:max-w-6xl lg:mx-auto lg:px-8">
+            {/* Generated Poster - Moderately sized on desktop */}
+            <div className="mb-8 mt-8 flex justify-center lg:justify-end lg:pr-4 lg:mt-0">
+              <div className="relative" style={{ border: '2px solid #F8FF13', borderRadius: '8px', padding: '4px' }}>
                 {processedImage && (
                   <img 
                     src={processedImage} 
                     alt="Generated Poster" 
-                    className="w-56 md:max-w-md lg:max-w-lg xl:max-w-xl object-contain rounded-lg shadow-lg"
-                    style={{ maxWidth: '350px', height: 'auto' }}
+                    className="w-72 md:max-w-md lg:w-80 xl:w-96 object-contain rounded-lg shadow-lg"
+                    style={{ height: 'auto' }}
                   />
                 )}
               </div>
             </div>
 
-            {/* Content - Centered on mobile */}
-            <div className="flex flex-col justify-center text-center lg:text-center lg:pl-4 lg:transform lg:translate-x-[-80px]">
+            {/* Right Side Content - Buttons and Text */}
+            <div className="flex flex-col justify-center text-center lg:text-center lg:pl-4">
               {/* Main Title */}
-              <h1 className="text-white text-2xl md:text-3xl lg:text-4xl font-bold mb-4 md:mb-4 font-parimatch">
+              <h1 className="text-white text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 md:mb-6 font-parimatch">
                 HERE&apos;S YOUR PERSONALIZED<br />
                 POSTER <span style={{ color: '#F8FF13' }}>WITH DIVINE HIMSELF!</span>
               </h1>
 
               {/* Description Text */}
-              <div className="text-white text-base md:text-base lg:text-base mb-6 md:mb-6 font-poppins leading-tight">
-                <p className="mb-0">
-                  Download & participate in <span style={{ color: '#F8FF13' }}>#DIVINExParimatch</span>
+              <div className="text-white text-sm md:text-base lg:text-base mb-6 md:mb-8 font-poppins lg:leading-tight">
+                <p className="mb-0 lg:mb-0">
+                  Download & participate in <span style={{ color: '#FFFFFF' }}>#DIVINExParimatch</span>
                 </p>
-                <p className="mb-0" style={{ color: '#F8FF13' }}>
+                <p className="mb-0 lg:mb-0 italic" style={{ color: '#F8FF13' }}>
                   to win exciting prizes!
                 </p>
-                <p>
+                <p className="lg:mb-0">
                   Check out our Instagram page for contest details!
                 </p>
               </div>
 
-              {/* Download Button */}
-              <div className="mb-6 flex justify-center">
+              {/* Download Button - Custom Desktop Size */}
+              <div className="mb-6 flex justify-center lg:justify-center">
                 <button 
                   onClick={handleDownload}
-                  className="relative px-8 md:px-12 xl:px-16 2xl:px-20 py-4 md:py-4 xl:py-5 2xl:py-6 font-bold text-black text-xl md:text-xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center"
+                  className="relative transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center lg:hidden"
                   style={{
                     background: '#F8FF13',
                     border: '3px solid transparent',
                     backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
                     backgroundOrigin: 'border-box',
                     backgroundClip: 'padding-box, border-box',
-                    borderRadius: '6.87px',
+                    borderRadius: '3.29px',
+                    padding: '16px 48px',
                   }}
                 >
-                  <span className="block transform skew-x-12 font-parimatch font-bold italic">DOWNLOAD</span>
+                  <span className="block transform skew-x-12 font-parimatch font-bold text-black text-3xl">DOWNLOAD</span>
+                </button>
+                
+                {/* Desktop Download Button with Custom Dimensions */}
+                <button 
+                  onClick={handleDownload}
+                  className="hidden lg:flex relative transform -skew-x-12 transition-all duration-200 hover:scale-105 items-center justify-center"
+                  style={{
+                    background: '#F8FF13',
+                    border: '3px solid transparent',
+                    backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    borderRadius: '3.29px',
+                    width: '263px',
+                    height: '63px',
+                  }}
+                >
+                  <span className="block transform skew-x-12 font-parimatch font-bold text-black w-32 h-22 flex items-center justify-center text-3xl">
+                    DOWNLOAD
+                  </span>
                 </button>
               </div>
 
               {/* Try Again Section */}
-              <div className="text-white font-poppins text-center">
-                <p className="text-base md:text-base lg:text-base mb-1">Not vibing with this one?</p>
-                <p className="text-base md:text-base lg:text-base mb-4">Hit refresh and let&apos;s create another legend!</p>
+              <div className="text-white font-poppins text-center lg:text-center">
+                <p className="text-sm md:text-base lg:text-base mb-0 lg:mb-1 lg:leading-snug">Not vibing with this one?</p>
+                <p className="text-sm md:text-base lg:text-base mb-4 lg:mb-4 lg:leading-snug">Hit refresh and let&apos;s create another legend!</p>
                 
-                <div className="flex justify-center">
+                {/* Try Again Button */}
+                <div className="flex justify-center lg:justify-center">
                   <button 
                     onClick={handleTryAgain}
-                    className="relative px-8 md:px-12 xl:px-16 2xl:px-20 py-4 md:py-4 xl:py-5 2xl:py-6 font-bold text-black text-xl md:text-xl uppercase tracking-wide transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center"
+                    className="relative transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center lg:hidden"
                     style={{
                       background: '#F8FF13',
                       border: '3px solid transparent',
                       backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
                       backgroundOrigin: 'border-box',
                       backgroundClip: 'padding-box, border-box',
-                      borderRadius: '6.87px',
+                      borderRadius: '3.29px',
+                      padding: '16px 48px',
                     }}
                   >
-                    <span className="block transform skew-x-12 font-parimatch font-bold italic">TRY AGAIN</span>
+                    <span className="block transform skew-x-12 font-parimatch font-bold text-black text-3xl">TRY AGAIN</span>
+                  </button>
+                  
+                  {/* Desktop Try Again Button with Custom Dimensions */}
+                  <button 
+                    onClick={handleTryAgain}
+                    className="hidden lg:flex relative transform -skew-x-12 transition-all duration-200 hover:scale-105 items-center justify-center"
+                    style={{
+                      background: '#F8FF13',
+                      border: '3px solid transparent',
+                      backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                      backgroundOrigin: 'border-box',
+                      backgroundClip: 'padding-box, border-box',
+                      borderRadius: '3.29px',
+                      width: '263px',
+                      height: '63px',
+                    }}
+                  >
+                    <span className="block transform skew-x-12 font-parimatch font-bold text-black w-32 h-22 flex items-center justify-center text-3xl">
+                      TRY AGAIN
+                    </span>
                   </button>
                 </div>
               </div>

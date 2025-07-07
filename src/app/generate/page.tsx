@@ -6,6 +6,8 @@ export default function GeneratePage() {
     name: '',
     email: ''
   });
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [consentChecked, setConsentChecked] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -17,7 +19,24 @@ export default function GeneratePage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!consentChecked) {
+      alert('Please agree to the terms and conditions to continue.');
+      return;
+    }
+    
     console.log('Form submitted:', formData);
+    
+    // Store user details in localStorage for the session
+    localStorage.setItem('userName', formData.name);
+    localStorage.setItem('userEmail', formData.email);
+    
+    // Generate session ID if not exists
+    if (!localStorage.getItem('sessionId')) {
+      const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('sessionId', sessionId);
+    }
+    
     // Navigate to gender selection page
     window.location.href = '/generate/gender';
   };
@@ -28,7 +47,7 @@ export default function GeneratePage() {
       <section 
         className="relative w-full bg-no-repeat bg-top min-h-screen"
         style={{
-          backgroundImage: `url('/images/secondpage/Desktop.png')`,
+          backgroundImage: `url('/images/secondpage/Desktop.avif')`,
           backgroundSize: '100% 100%',
         }}
       >
@@ -36,7 +55,7 @@ export default function GeneratePage() {
         <div 
           className="absolute inset-0 block md:hidden bg-no-repeat bg-center"
           style={{
-            backgroundImage: `url('/images/mobile/mobile.png')`,
+            backgroundImage: `url('/images/mobile/mobile.avif')`,
             backgroundSize: 'cover',
           }}
         />
@@ -147,6 +166,33 @@ export default function GeneratePage() {
                     *Upon generation, your poster will be sent to the email address you provide. Please enter a valid email.
                   </p>
                 </div>
+
+                {/* Consent Checkbox */}
+                <div className="w-full md:w-2/3 px-2 md:px-0 flex items-center justify-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="consent"
+                    checked={consentChecked}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setShowConsentModal(true);
+                      } else {
+                        setConsentChecked(false);
+                      }
+                    }}
+                    className="w-5 h-5 rounded border-2 border-yellow-400 bg-transparent appearance-none checked:bg-yellow-400 checked:border-yellow-400 relative cursor-pointer"
+                    style={{
+                      backgroundImage: consentChecked ? `url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='black' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='m13.854 3.646-7.5 7.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6 10.293l7.146-7.147a.5.5 0 0 1 .708.708z'/%3e%3c/svg%3e")` : 'none'
+                    }}
+                  />
+                  <label 
+                    htmlFor="consent" 
+                    className="text-white font-poppins text-sm cursor-pointer hover:text-yellow-400"
+                    onClick={() => setShowConsentModal(true)}
+                  >
+                    I agree to terms and conditions
+                  </label>
+                </div>
                 
                 {/* Submit Button */}
                 <div className="pt-4 w-full flex justify-center px-2 md:px-0">
@@ -171,6 +217,147 @@ export default function GeneratePage() {
           </div>
         </div>
       </section>
+
+      {/* Consent Modal */}
+      {showConsentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div 
+            className="relative rounded-lg p-8 w-96 md:w-auto max-w-2xl max-h-[90vh] overflow-y-auto"
+            style={{ 
+              backgroundColor: '#111112',
+              border: '2px solid #F8FF13'
+            }}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowConsentModal(false)}
+              className="absolute top-3 right-3 text-white hover:text-gray-300 text-xl font-bold"
+              style={{ 
+                fontStyle: 'normal', 
+                fontFamily: 'Arial, sans-serif',
+                fontWeight: 'normal',
+                transform: 'none'
+              }}
+            >
+              ×
+            </button>
+
+            {/* Modal content */}
+            <div className="flex flex-col items-center space-y-6 py-4">
+              {/* Title */}
+              <h3 className="text-white text-xl font-medium font-poppins text-center">
+                Terms and Conditions
+              </h3>
+
+              {/* Consent Text */}
+              <div className="text-white font-poppins text-sm leading-relaxed max-w-lg">
+                <p className="mb-4">
+                  By checking this box, you acknowledge and agree to the following:
+                </p>
+                <ul className="list-disc list-inside space-y-2 mb-4">
+                  <li>You grant Parimatch the right to use, process, and store the uploaded image(s) for the purpose of generating personalized content.</li>
+                  <li>You confirm that you have the right to use and share the uploaded image(s).</li>
+                  <li>You understand that the uploaded image(s) may be used in promotional materials, marketing campaigns, and other commercial purposes by Parimatch.</li>
+                  <li>You agree that Parimatch may retain the uploaded image(s) for a reasonable period as required for business operations.</li>
+                  <li>You waive any claims against Parimatch regarding the use of your image(s) as described above.</li>
+                </ul>
+                <p className="text-xs text-gray-400">
+                  By proceeding, you acknowledge that you have read, understood, and agree to these terms and conditions.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
+                {/* Decline Button */}
+                <button
+                  onClick={() => {
+                    setConsentChecked(false);
+                    setShowConsentModal(false);
+                  }}
+                  className="relative transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center lg:hidden"
+                  style={{
+                    background: '#585858',
+                    border: '3px solid transparent',
+                    backgroundImage: 'linear-gradient(#585858, #585858), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    borderRadius: '3.29px',
+                    padding: '16px 48px',
+                  }}
+                >
+                  <span className="block transform skew-x-12 font-parimatch font-bold text-white text-3xl">DECLINE</span>
+                </button>
+                
+                {/* Desktop Decline Button */}
+                <button
+                  onClick={() => {
+                    setConsentChecked(false);
+                    setShowConsentModal(false);
+                  }}
+                  className="hidden lg:flex relative transform -skew-x-12 transition-all duration-200 hover:scale-105 items-center justify-center"
+                  style={{
+                    background: '#585858',
+                    border: '3px solid transparent',
+                    backgroundImage: 'linear-gradient(#585858, #585858), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    borderRadius: '3.29px',
+                    width: '263px',
+                    height: '63px',
+                  }}
+                >
+                  <span className="block transform skew-x-12 font-parimatch font-bold text-white w-32 h-22 flex items-center justify-center text-3xl">
+                    DECLINE
+                  </span>
+                </button>
+
+                {/* Accept Button */}
+                <button
+                  onClick={() => {
+                    setConsentChecked(true);
+                    setShowConsentModal(false);
+                  }}
+                  className="relative transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center lg:hidden"
+                  style={{
+                    background: '#F8FF13',
+                    border: '3px solid transparent',
+                    backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    borderRadius: '3.29px',
+                    padding: '16px 48px',
+                  }}
+                >
+                  <span className="block transform skew-x-12 font-parimatch font-bold text-black text-3xl">ACCEPT</span>
+                </button>
+                
+                {/* Desktop Accept Button */}
+                <button
+                  onClick={() => {
+                    setConsentChecked(true);
+                    setShowConsentModal(false);
+                  }}
+                  className="hidden lg:flex relative transform -skew-x-12 transition-all duration-200 hover:scale-105 items-center justify-center"
+                  style={{
+                    background: '#F8FF13',
+                    border: '3px solid transparent',
+                    backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    borderRadius: '3.29px',
+                    width: '263px',
+                    height: '63px',
+                  }}
+                >
+                  <span className="block transform skew-x-12 font-parimatch font-bold text-black w-32 h-22 flex items-center justify-center text-3xl">
+                    ACCEPT
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

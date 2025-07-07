@@ -9,6 +9,7 @@ function UploadPhotoPageContent() {
   const [showModal, setShowModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showInstructionsModal, setShowInstructionsModal] = useState(true);
+
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
   const searchParams = useSearchParams();
@@ -151,6 +152,16 @@ function UploadPhotoPageContent() {
 
   const handleCameraClick = async () => {
     try {
+      // Inject CSS for capture button font
+      const style = document.createElement('style');
+      style.textContent = `
+        .capture-photo-btn {
+          font-family: 'Pari-Match Regular', 'Arial Black', 'Arial Bold', sans-serif !important;
+          font-weight: bold !important;
+        }
+      `;
+      document.head.appendChild(style);
+      
       // Request camera access
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'user' } // Use front camera by default
@@ -189,17 +200,42 @@ function UploadPhotoPageContent() {
       `;
       
       const captureBtn = document.createElement('button');
-      captureBtn.textContent = 'Capture Photo';
       captureBtn.style.cssText = `
-        margin-top: 20px;
-        padding: 10px 20px;
+        position: relative;
+        transform: skewX(-12deg);
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         background: #F8FF13;
-        color: black;
-        border: none;
-        border-radius: 5px;
-        font-size: 16px;
+        border: 3px solid transparent;
+        background-image: linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666);
+        background-origin: border-box;
+        background-clip: padding-box, border-box;
+        border-radius: 3.29px;
+        min-width: 300px;
+        height: 63px;
         cursor: pointer;
+        margin-top: 20px;
+        white-space: nowrap;
+        overflow: hidden;
       `;
+      
+      // Create span for text with reverse skew
+      const captureSpan = document.createElement('span');
+      captureSpan.textContent = 'CAPTURE PHOTO';
+      captureSpan.className = 'capture-photo-btn';
+      captureSpan.style.cssText = `
+        display: block;
+        transform: skewX(12deg);
+        font-size: 20px;
+        color: black;
+        white-space: nowrap;
+        text-transform: uppercase;
+        line-height: 1.1;
+      `;
+      captureBtn.innerHTML = '';
+      captureBtn.appendChild(captureSpan);
       
       const closeBtn = document.createElement('button');
       closeBtn.textContent = '×';
@@ -235,6 +271,7 @@ function UploadPhotoPageContent() {
         // Clean up
         stream.getTracks().forEach(track => track.stop());
         document.body.removeChild(cameraModal);
+        document.head.removeChild(style);
         setShowModal(false);
       };
       
@@ -242,6 +279,8 @@ function UploadPhotoPageContent() {
       closeBtn.onclick = () => {
         stream.getTracks().forEach(track => track.stop());
         document.body.removeChild(cameraModal);
+        // Clean up injected styles
+        document.head.removeChild(style);
       };
       
     } catch (error) {
@@ -282,7 +321,7 @@ function UploadPhotoPageContent() {
       <section 
         className="relative w-full bg-no-repeat bg-top min-h-screen"
         style={{
-          backgroundImage: `url('/images/secondpage/Desktop.png')`,
+          backgroundImage: `url('/images/secondpage/Desktop.avif')`,
           backgroundSize: '100% 100%',
         }}
       >
@@ -290,7 +329,7 @@ function UploadPhotoPageContent() {
         <div 
           className="absolute inset-0 block md:hidden bg-no-repeat bg-top"
           style={{
-            backgroundImage: `url('/images/mobile/mobile.png')`,
+            backgroundImage: `url('/images/mobile/mobile.avif')`,
             backgroundSize: '100% 100%',
           }}
         />
@@ -371,7 +410,7 @@ function UploadPhotoPageContent() {
                   {/* Instructions Image */}
                   <div className="flex items-center">
                     <img 
-                      src="/images/uploadpage/instructions.png" 
+                      src="/images/uploadpage/instructions.avif" 
                       alt="Instructions" 
                       className="h-36 w-auto object-contain"
                     />
@@ -381,14 +420,14 @@ function UploadPhotoPageContent() {
                   <div className="flex flex-col space-y-4">
                     <div className="flex items-center justify-center">
                       <img 
-                        src="/images/uploadpage/wrong.png" 
+                        src="/images/uploadpage/wrong.avif" 
                         alt="Wrong example" 
                         className="h-32 w-auto object-contain"
                       />
                     </div>
                     <div className="flex items-center justify-center">
                       <img 
-                        src="/images/uploadpage/right.png" 
+                        src="/images/uploadpage/right.avif" 
                         alt="Right example" 
                         className="h-32 w-auto object-contain"
                       />
@@ -426,7 +465,6 @@ function UploadPhotoPageContent() {
                 </div>
               </div>
 
-
             </div>
           </div>
         </div>
@@ -446,6 +484,12 @@ function UploadPhotoPageContent() {
             <button
               onClick={() => setShowModal(false)}
               className="absolute top-3 right-3 text-white hover:text-gray-300 text-xl font-bold"
+              style={{ 
+                fontStyle: 'normal', 
+                fontFamily: 'Arial, sans-serif',
+                fontWeight: 'normal',
+                transform: 'none'
+              }}
             >
               ×
             </button>
@@ -490,167 +534,239 @@ function UploadPhotoPageContent() {
               </div>
             </div>
           </div>
-                  </div>
-        )}
+        </div>
+      )}
 
-        {/* Mobile Instructions Modal - Shows on first visit */}
-        {showInstructionsModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 md:hidden">
-            <div 
-              className="relative rounded-lg p-6 w-80 max-w-sm mx-4"
-              style={{ 
-                backgroundColor: '#111112',
-                border: '0.5px solid #F8FF13'
-              }}
-            >
-              {/* Modal content */}
-              <div className="flex flex-col items-center space-y-6 py-4">
-                {/* Title */}
-                <h3 className="text-white text-lg font-medium font-poppins text-center">
-                  Photo Guidelines
-                </h3>
+      {/* Mobile Instructions Modal - Shows on first visit */}
+      {showInstructionsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 md:hidden">
+          <div 
+            className="relative rounded-lg p-6 w-80 max-w-sm mx-4"
+            style={{ 
+              backgroundColor: '#111112',
+              border: '0.5px solid #F8FF13'
+            }}
+          >
+            {/* Modal content */}
+            <div className="flex flex-col items-center space-y-6 py-4">
+              {/* Title */}
+              <h3 className="text-white text-lg font-medium font-poppins text-center">
+                Photo Guidelines
+              </h3>
 
-                {/* Wrong and Right Images Vertically Stacked */}
-                <div className="flex flex-col space-y-4">
-                  <div className="flex items-center justify-center">
-                    <img 
-                      src="/images/uploadpage/wrong.png" 
-                      alt="Wrong example" 
-                      className="h-24 w-auto object-contain"
-                    />
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <img 
-                      src="/images/uploadpage/right.png" 
-                      alt="Right example" 
-                      className="h-24 w-auto object-contain"
-                    />
-                  </div>
-                </div>
-
-                {/* Instructions Image Below */}
+              {/* Wrong and Right Images Vertically Stacked */}
+              <div className="flex flex-col space-y-4">
                 <div className="flex items-center justify-center">
                   <img 
-                    src="/images/uploadpage/instructions.png" 
-                    alt="Instructions" 
-                    className="h-32 w-auto object-contain"
+                    src="/images/uploadpage/wrong.avif" 
+                    alt="Wrong example" 
+                    className="h-24 w-auto object-contain"
                   />
                 </div>
+                <div className="flex items-center justify-center">
+                  <img 
+                    src="/images/uploadpage/right.avif" 
+                    alt="Right example" 
+                    className="h-24 w-auto object-contain"
+                  />
+                </div>
+              </div>
 
-                {/* Understood Button */}
+              {/* Instructions Image Below */}
+              <div className="flex items-center justify-center">
+                <img 
+                  src="/images/uploadpage/instructions.avif" 
+                  alt="Instructions" 
+                  className="h-32 w-auto object-contain"
+                />
+              </div>
+
+              {/* Understood Button */}
+              <button
+                onClick={() => setShowInstructionsModal(false)}
+                className="relative transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center lg:hidden"
+                style={{
+                  background: '#F8FF13',
+                  border: '3px solid transparent',
+                  backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                  backgroundOrigin: 'border-box',
+                  backgroundClip: 'padding-box, border-box',
+                  borderRadius: '3.29px',
+                  padding: '16px 48px',
+                }}
+              >
+                <span className="block transform skew-x-12 font-parimatch font-bold text-black text-3xl">UNDERSTOOD</span>
+              </button>
+              
+              {/* Desktop Understood Button with Custom Dimensions */}
+              <button
+                onClick={() => setShowInstructionsModal(false)}
+                className="hidden lg:flex relative transform -skew-x-12 transition-all duration-200 hover:scale-105 items-center justify-center"
+                style={{
+                  background: '#F8FF13',
+                  border: '3px solid transparent',
+                  backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                  backgroundOrigin: 'border-box',
+                  backgroundClip: 'padding-box, border-box',
+                  borderRadius: '3.29px',
+                  width: '263px',
+                  height: '63px',
+                }}
+              >
+                <span className="block transform skew-x-12 font-parimatch font-bold text-black w-32 h-22 flex items-center justify-center text-3xl">
+                  UNDERSTOOD
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {showPreviewModal && uploadedImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div 
+            className="relative rounded-lg p-8 w-96 md:w-auto max-w-2xl"
+            style={{ 
+              backgroundColor: '#111112',
+              border: '0.5px solid #F8FF13'
+            }}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => {
+                setShowPreviewModal(false);
+                setUploadedImage(null);
+              }}
+              className="absolute top-3 right-3 text-white hover:text-gray-300 text-xl font-bold"
+              style={{ 
+                fontStyle: 'normal', 
+                fontFamily: 'Arial, sans-serif',
+                fontWeight: 'normal',
+                transform: 'none'
+              }}
+            >
+              ×
+            </button>
+
+            {/* Modal content */}
+            <div className="flex flex-col items-center space-y-6 py-4">
+              {/* Title */}
+              <h3 className="text-white text-xl font-medium font-poppins text-center">
+                Preview Your Photo
+              </h3>
+
+              {/* Preview Image */}
+              <div className="w-80 h-80 bg-gray-300 rounded-lg overflow-hidden">
+                <img 
+                  src={uploadedImage} 
+                  alt="Photo preview" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
+                {/* Retake Button */}
                 <button
-                  onClick={() => setShowInstructionsModal(false)}
-                  className="px-8 py-3 font-normal text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200 font-poppins"
+                  onClick={() => {
+                    setShowPreviewModal(false);
+                    setUploadedImage(null);
+                  }}
+                  className="relative transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center lg:hidden"
                   style={{
                     background: '#F8FF13',
-                    color: 'black',
-                    border: '0.5px solid transparent',
+                    border: '3px solid transparent',
                     backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
                     backgroundOrigin: 'border-box',
                     backgroundClip: 'padding-box, border-box',
-                    cursor: 'pointer',
+                    borderRadius: '3.29px',
+                    padding: '16px 70px',
+                    minWidth: '240px',
                   }}
                 >
-                  <span className="block transform skew-x-12">
-                    UNDERSTOOD
+                  <span className="block transform skew-x-12 font-parimatch font-bold text-black text-3xl whitespace-nowrap">RETAKE PHOTO</span>
+                </button>
+                
+                {/* Desktop Retake Button with Custom Dimensions */}
+                <button
+                  onClick={() => {
+                    setShowPreviewModal(false);
+                    setUploadedImage(null);
+                  }}
+                  className="hidden lg:flex relative transform -skew-x-12 transition-all duration-200 hover:scale-105 items-center justify-center"
+                  style={{
+                    background: '#F8FF13',
+                    border: '3px solid transparent',
+                    backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    borderRadius: '3.29px',
+                    width: '320px',
+                    height: '63px',
+                  }}
+                >
+                  <span className="block transform skew-x-12 font-parimatch font-bold text-black flex items-center justify-center text-3xl whitespace-nowrap">
+                    RETAKE PHOTO
+                  </span>
+                </button>
+
+                {/* Submit Button */}
+                <button 
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="relative transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center lg:hidden"
+                  style={{
+                    background: loading ? '#585858' : '#F8FF13',
+                    border: '3px solid transparent',
+                    backgroundImage: loading 
+                      ? 'none'
+                      : 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    borderRadius: '3.29px',
+                    padding: '16px 48px',
+                    opacity: loading ? 0.7 : 1,
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <span className="block transform skew-x-12 font-parimatch font-bold text-black text-3xl">
+                    {loading ? 'PROCESSING...' : 'SUBMIT'}
+                  </span>
+                </button>
+                
+                {/* Desktop Submit Button with Custom Dimensions */}
+                <button 
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="hidden lg:flex relative transform -skew-x-12 transition-all duration-200 hover:scale-105 items-center justify-center"
+                  style={{
+                    background: loading ? '#585858' : '#F8FF13',
+                    border: '3px solid transparent',
+                    backgroundImage: loading 
+                      ? 'none'
+                      : 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    borderRadius: '3.29px',
+                    width: '263px',
+                    height: '63px',
+                    opacity: loading ? 0.7 : 1,
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <span className="block transform skew-x-12 font-parimatch font-bold text-black w-32 h-22 flex items-center justify-center text-3xl">
+                    {loading ? 'PROCESSING...' : 'SUBMIT'}
                   </span>
                 </button>
               </div>
             </div>
           </div>
-        )}
-
-        {/* Preview Modal */}
-        {showPreviewModal && uploadedImage && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-            <div 
-              className="relative rounded-lg p-8 w-96 md:w-auto max-w-2xl"
-              style={{ 
-                backgroundColor: '#111112',
-                border: '0.5px solid #F8FF13'
-              }}
-            >
-              {/* Close button */}
-              <button
-                onClick={() => {
-                  setShowPreviewModal(false);
-                  setUploadedImage(null);
-                }}
-                className="absolute top-3 right-3 text-white hover:text-gray-300 text-xl font-bold"
-              >
-                ×
-              </button>
-
-              {/* Modal content */}
-              <div className="flex flex-col items-center space-y-6 py-4">
-                {/* Title */}
-                <h3 className="text-white text-xl font-medium font-poppins text-center">
-                  Preview Your Photo
-                </h3>
-
-                {/* Preview Image */}
-                <div className="w-80 h-80 bg-gray-300 rounded-lg overflow-hidden">
-                  <img 
-                    src={uploadedImage} 
-                    alt="Photo preview" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
-                  {/* Retake Button */}
-                  <button
-                    onClick={() => {
-                      setShowPreviewModal(false);
-                      setUploadedImage(null);
-                    }}
-                    className="px-8 py-3 font-normal text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200 font-poppins"
-                    style={{
-                      background: '#666666',
-                      color: 'white',
-                      border: '0.5px solid transparent',
-                      backgroundImage: 'linear-gradient(#666666, #666666), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
-                      backgroundOrigin: 'border-box',
-                      backgroundClip: 'padding-box, border-box',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <span className="block transform skew-x-12">
-                      RETAKE PHOTO
-                    </span>
-                  </button>
-
-                  {/* Submit Button */}
-                  <button 
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    className="px-12 py-3 font-normal text-lg uppercase tracking-wide transform -skew-x-12 transition-all duration-200 font-poppins"
-                    style={{
-                      background: loading ? '#585858' : '#F8FF13',
-                      color: 'black',
-                      border: loading ? 'none' : '0.5px solid transparent',
-                      backgroundImage: loading 
-                        ? 'none'
-                        : 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
-                      backgroundOrigin: loading ? 'initial' : 'border-box',
-                      backgroundClip: loading ? 'initial' : 'padding-box, border-box',
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      opacity: loading ? 0.7 : 1,
-                    }}
-                  >
-                    <span className="block transform skew-x-12">
-                      {loading ? 'PROCESSING...' : 'SUBMIT'}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function UploadPhotoPage() {
   return (
