@@ -1,4 +1,7 @@
 <?php
+// Start output buffering to prevent any accidental output
+ob_start();
+
 // Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -13,6 +16,7 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    ob_end_clean(); // Clear any buffered output
     exit(0);
 }
 
@@ -151,10 +155,29 @@ try {
     }
 
     function getTargetSide($posterName) {
-        // Option 2 uses left side, Option 3M uses left side, others use right side
-        if (strpos($posterName, 'Option2') !== false || strpos($posterName, 'Option3M') !== false) {
+        // Updated logic based on specific poster requirements:
+        // Option1F - right side
+        // Option1M - left side  
+        // Option2F - left side
+        // Option2M - left side
+        // Option3F - right side
+        // Option3M - right side
+        
+        if (strpos($posterName, 'Option1F') !== false) {
+            return 'right';
+        } elseif (strpos($posterName, 'Option1M') !== false) {
             return 'left';
+        } elseif (strpos($posterName, 'Option2F') !== false) {
+            return 'left';
+        } elseif (strpos($posterName, 'Option2M') !== false) {
+            return 'left';
+        } elseif (strpos($posterName, 'Option3F') !== false) {
+            return 'right';
+        } elseif (strpos($posterName, 'Option3M') !== false) {
+            return 'right';
         }
+        
+        // Default fallback (shouldn't reach here with valid poster names)
         return 'right';
     }
 
@@ -186,73 +209,80 @@ try {
         return $resizedData;
     }
 
-    function extractPosterSide($posterData, $targetSide) {
+    function extractPosterSide($posterData, $targetSide, $posterName = '') {
         $image = imagecreatefromstring($posterData);
         if (!$image) {
             throw new Exception('Invalid poster image data');
         }
-        
         $width = imagesx($image);
         $height = imagesy($image);
-        $halfWidth = intval($width / 2);
-        
-        $extracted = imagecreatetruecolor($halfWidth, $height);
-        
-        if ($targetSide === 'left') {
-            imagecopy($extracted, $image, 0, 0, 0, 0, $halfWidth, $height);
+        // Special case for Option3F: use 45% width for right side
+        if ($targetSide === 'right' && strpos($posterName, 'Option3F') !== false) {
+            $rightWidth = intval($width * 0.45);
+            $extracted = imagecreatetruecolor($rightWidth, $height);
+            imagecopy($extracted, $image, 0, 0, $width - $rightWidth, 0, $rightWidth, $height);
         } else {
-            imagecopy($extracted, $image, 0, 0, $halfWidth, 0, $halfWidth, $height);
+            $halfWidth = intval($width / 2);
+            $extracted = imagecreatetruecolor($halfWidth, $height);
+            if ($targetSide === 'left') {
+                imagecopy($extracted, $image, 0, 0, 0, 0, $halfWidth, $height);
+            } else {
+                imagecopy($extracted, $image, 0, 0, $halfWidth, 0, $halfWidth, $height);
+            }
         }
-        
         ob_start();
         imagepng($extracted, null, 9);
         $extractedData = ob_get_contents();
         ob_end_clean();
-        
         imagedestroy($image);
         imagedestroy($extracted);
-        
         return $extractedData;
     }
 
-    function compositeFinalImage($originalPosterData, $swappedSideData, $targetSide) {
+    function compositeFinalImage($originalPosterData, $swappedSideData, $targetSide, $posterName = '') {
         $originalImage = imagecreatefromstring($originalPosterData);
         $swappedImage = imagecreatefromstring($swappedSideData);
-        
         if (!$originalImage || !$swappedImage) {
             throw new Exception('Invalid image data for compositing');
         }
-        
         $originalWidth = imagesx($originalImage);
         $originalHeight = imagesy($originalImage);
-        $halfWidth = intval($originalWidth / 2);
-        
-        // Resize swapped image to match dimensions
-        $resizedSwapped = imagecreatetruecolor($halfWidth, $originalHeight);
-        imagecopyresampled(
-            $resizedSwapped, 
-            $swappedImage, 
-            0, 0, 0, 0, 
-            $halfWidth, $originalHeight, 
-            imagesx($swappedImage), imagesy($swappedImage)
-        );
-        
-        // Composite back onto original
-        if ($targetSide === 'left') {
-            imagecopy($originalImage, $resizedSwapped, 0, 0, 0, 0, $halfWidth, $originalHeight);
+        // Special case for Option3F: use 45% width for right side
+        if ($targetSide === 'right' && strpos($posterName, 'Option3F') !== false) {
+            $rightWidth = intval($originalWidth * 0.45);
+            $resizedSwapped = imagecreatetruecolor($rightWidth, $originalHeight);
+            imagecopyresampled(
+                $resizedSwapped,
+                $swappedImage,
+                0, 0, 0, 0,
+                $rightWidth, $originalHeight,
+                imagesx($swappedImage), imagesy($swappedImage)
+            );
+            // Paste at the right edge
+            imagecopy($originalImage, $resizedSwapped, $originalWidth - $rightWidth, 0, 0, 0, $rightWidth, $originalHeight);
         } else {
-            imagecopy($originalImage, $resizedSwapped, $halfWidth, 0, 0, 0, $halfWidth, $originalHeight);
+            $halfWidth = intval($originalWidth / 2);
+            $resizedSwapped = imagecreatetruecolor($halfWidth, $originalHeight);
+            imagecopyresampled(
+                $resizedSwapped,
+                $swappedImage,
+                0, 0, 0, 0,
+                $halfWidth, $originalHeight,
+                imagesx($swappedImage), imagesy($swappedImage)
+            );
+            if ($targetSide === 'left') {
+                imagecopy($originalImage, $resizedSwapped, 0, 0, 0, 0, $halfWidth, $originalHeight);
+            } else {
+                imagecopy($originalImage, $resizedSwapped, $halfWidth, 0, 0, 0, $halfWidth, $originalHeight);
+            }
         }
-        
         ob_start();
         imagepng($originalImage, null, 9);
         $finalData = ob_get_contents();
         ob_end_clean();
-        
         imagedestroy($originalImage);
         imagedestroy($swappedImage);
         imagedestroy($resizedSwapped);
-        
         return $finalData;
     }
 
@@ -318,7 +348,7 @@ try {
     
     // Determine target side and extract
     $targetSide = getTargetSide($posterName);
-    $extractedSideData = extractPosterSide($posterData, $targetSide);
+    $extractedSideData = extractPosterSide($posterData, $targetSide, $posterName);
     $targetSideBase64 = base64_encode($extractedSideData);
     
     // Prepare FaceSwap v4 API request
@@ -363,7 +393,7 @@ try {
     $swappedResultData = base64_decode($responseData['image']);
     
     // Composite result back onto original poster
-    $finalImageData = compositeFinalImage($posterData, $swappedResultData, $targetSide);
+    $finalImageData = compositeFinalImage($posterData, $swappedResultData, $targetSide, $posterName);
     
     // Upload to Supabase if configured
     $supabaseResult = null;
@@ -399,6 +429,8 @@ try {
         $response['supabaseUrl'] = $supabaseResult['url'];
     }
     
+    // Clear any accidental output and send JSON response
+    ob_end_clean();
     echo json_encode($response);
     
 } catch (Exception $e) {
@@ -411,6 +443,9 @@ try {
     }
     
     error_log('FaceSwap PHP API error: ' . $e->getMessage());
+    
+    // Clear any accidental output and send error JSON response
+    ob_end_clean();
     http_response_code(500);
     echo json_encode([
         'success' => false,

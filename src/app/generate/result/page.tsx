@@ -32,8 +32,8 @@ function ResultPageContent() {
 
       console.log('Sending email notification to:', userEmail);
       
-      // Use PHP endpoint directly for Hostinger compatibility
-      // On Hostinger shared hosting, only PHP endpoints work reliably
+      // Use Hostinger SMTP endpoint for reliable email delivery
+      // This uses your domain email (support@posewithdivine.com) via SMTP
       const response = await fetch('/api/send-email.php', {
         method: 'POST',
         headers: {
@@ -104,13 +104,23 @@ function ResultPageContent() {
       setError(null);
       setProgress(10);
 
-      console.log('Starting face swap process:', { posterName, gender });
+      console.log('=== FACE SWAP DEBUG START ===');
+      console.log('Starting face swap process with params:', { 
+        posterName, 
+        gender,
+        sessionId,
+        userImageType: userImage.substring(0, 30) + '...' // Just log the start of the data URL
+      });
 
       // Convert base64 to blob
       const response = await fetch(userImage);
       const blob = await response.blob();
       
-      console.log('User image blob size:', blob.size);
+      console.log('User image blob details:', {
+        size: blob.size,
+        type: blob.type,
+        // Remove lastModified as it doesn't exist on Blob type
+      });
       setProgress(20);
 
       // Create FormData
@@ -119,9 +129,14 @@ function ResultPageContent() {
       formData.append('posterName', posterName);
       formData.append('sessionId', sessionId);
 
+      console.log('FormData created with fields:', {
+        posterName: formData.get('posterName'),
+        sessionId: formData.get('sessionId'),
+        hasUserImage: formData.has('userImage')
+      });
       setProgress(30);
 
-      console.log('Calling face swap API...');
+      console.log('Calling PHP face swap API endpoint: /api/process-faceswap.php');
 
       // Start progressive loading animation while API is processing
       const progressInterval = setInterval(() => {
@@ -133,36 +148,69 @@ function ResultPageContent() {
         });
       }, 500); // Update every 500ms
 
-      // Call our faceswap API
-      const faceSwapResponse = await fetch('/api/process-faceswap', {
-        method: 'POST',
-        body: formData,
-      });
+      // Call PHP API endpoint directly
+      let faceSwapResponse;
+      let responseText = '';
+      
+      try {
+        faceSwapResponse = await fetch('/api/process-faceswap.php', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        // Store the response text for debugging
+        responseText = await faceSwapResponse.clone().text().catch(e => `Error reading response: ${e.message}`);
+        console.log(`PHP API response status: ${faceSwapResponse.status}`, 
+          faceSwapResponse.status !== 200 ? `Response text: ${responseText}` : '(Success)');
+      } catch (fetchError: any) {
+        console.error('Fetch error:', fetchError);
+        clearInterval(progressInterval);
+        throw new Error(`API request failed: ${fetchError.message}`);
+      }
 
       // Clear the progressive loading interval
       clearInterval(progressInterval);
 
-      console.log('Face swap API response status:', faceSwapResponse.status);
+      console.log(`Face swap API final response status:`, faceSwapResponse.status);
 
       if (!faceSwapResponse.ok) {
         let errorMessage = 'Face swap processing failed. Please try again.';
         
         try {
-          const errorData = await faceSwapResponse.json();
-          console.error('Face swap API error:', errorData);
+          // Try to parse the response as JSON
+          const errorData = await faceSwapResponse.json().catch(e => {
+            console.error('Error parsing JSON response:', e);
+            return { error: `Failed to parse response: ${responseText}` };
+          });
+          
+          console.error('Face swap API error data:', errorData);
+          
           // Use a user-friendly message instead of raw API error
           errorMessage = errorData.error && typeof errorData.error === 'string' 
             ? 'Processing failed. Please try again with a different photo.' 
             : 'Face swap service is temporarily unavailable. Please try again.';
         } catch (parseError) {
           console.error('Error parsing API response:', parseError);
+          console.log('Raw response text:', responseText);
           errorMessage = 'Service temporarily unavailable. Please try again later.';
         }
         
         throw new Error(errorMessage);
       }
 
-      const result = await faceSwapResponse.json();
+      // Try to parse the response as JSON
+      let result;
+      try {
+        result = await faceSwapResponse.json();
+        console.log('Face swap result structure:', Object.keys(result));
+        console.log('Face swap success:', result.success);
+        console.log('Has image URL:', !!result.imageUrl);
+        console.log('Has Supabase URL:', !!result.supabaseUrl);
+      } catch (jsonError) {
+        console.error('Error parsing successful response as JSON:', jsonError);
+        console.log('Raw successful response text:', responseText);
+        throw new Error('Error processing the response from the face swap service');
+      }
       
       console.log('Face swap result:', { success: result.success, hasImage: !!result.imageUrl });
 
@@ -288,7 +336,12 @@ function ResultPageContent() {
 
   const performAutomaticHairSwap = async (faceSwappedImageUrl: string, userOriginalImageUrl: string, sessionId: string) => {
     try {
-      console.log('Starting automatic hair swap process...');
+      console.log('=== HAIR SWAP DEBUG START ===');
+      console.log('Starting automatic hair swap process with params:', {
+        faceSwappedImageUrlType: faceSwappedImageUrl.substring(0, 30) + '...',
+        userOriginalImageUrlType: userOriginalImageUrl.substring(0, 30) + '...',
+        sessionId
+      });
       setProgress(80);
       
       // Track hair swap processing start
@@ -314,6 +367,12 @@ function ResultPageContent() {
         );
         if (uploadResult?.url) {
           faceSwappedUrl = uploadResult.url;
+          console.log('Face-swapped image uploaded successfully:', {
+            url: uploadResult.url.substring(0, 50) + '...',
+            path: uploadResult.path
+          });
+        } else {
+          console.error('Failed to upload face-swapped image');
         }
       }
 
@@ -327,34 +386,67 @@ function ResultPageContent() {
         );
         if (uploadResult?.url) {
           userOriginalUrl = uploadResult.url;
+          console.log('User original image uploaded successfully:', {
+            url: uploadResult.url.substring(0, 50) + '...',
+            path: uploadResult.path
+          });
+        } else {
+          console.error('Failed to upload user original image');
         }
       }
 
-      console.log('Calling hair swap API...');
+      console.log('Calling hair swap API with URLs:', {
+        faceSwappedUrl: faceSwappedUrl.substring(0, 30) + '...',
+        userOriginalUrl: userOriginalUrl.substring(0, 30) + '...'
+      });
       setProgress(85);
 
-      // Call hair swap API
-      const hairSwapResponse = await fetch('/api/process-hairswap', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          faceSwappedImageUrl: faceSwappedUrl,
-          userOriginalImageUrl: userOriginalUrl
-        }),
-      });
+      // Call PHP hair swap API directly
+      let hairSwapResponse;
+      let responseText = '';
+      
+      try {
+        console.log('Calling PHP hair swap API endpoint: /api/process-hairswap.php');
+        hairSwapResponse = await fetch('/api/process-hairswap.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            faceSwappedImageUrl: faceSwappedUrl,
+            userOriginalImageUrl: userOriginalUrl
+          }),
+        });
+        
+        // Store the response text for debugging
+        responseText = await hairSwapResponse.clone().text().catch(e => `Error reading response: ${e.message}`);
+        console.log(`PHP hair swap API response status: ${hairSwapResponse.status}`, 
+          hairSwapResponse.status !== 200 ? `Response text: ${responseText}` : '(Success)');
+      } catch (fetchError: any) {
+        console.error('Hair swap fetch error:', fetchError);
+        throw new Error(`Hair swap API request failed: ${fetchError.message}`);
+      }
+
+      console.log(`Hair swap API final response status:`, hairSwapResponse.status);
 
       if (!hairSwapResponse.ok) {
-        const errorData = await hairSwapResponse.json();
-        console.error('Hair swap API error:', errorData);
+        const errorData = await hairSwapResponse.json().catch(e => {
+          console.error('Error parsing hair swap JSON error response:', e);
+          return { error: `Failed to parse error response: ${responseText}` };
+        });
+        console.error('Hair swap API error data:', errorData);
         throw new Error(errorData.error || `HTTP ${hairSwapResponse.status}: Hair swap processing failed`);
       }
 
-      const result = await hairSwapResponse.json();
+      const result = await hairSwapResponse.json().catch(e => {
+        console.error('Error parsing hair swap JSON success response:', e);
+        throw new Error(`Failed to parse success response: ${responseText}`);
+      });
       setProgress(95);
       
-      console.log('Hair swap result:', { success: result.success, hasImage: !!result.imageUrl });
+      console.log('Hair swap result structure:', Object.keys(result));
+      console.log('Hair swap success:', result.success);
+      console.log('Hair swap has image URL:', !!result.imageUrl);
 
       if (result.success && result.imageUrl) {
         setHairSwappedImage(result.imageUrl);

@@ -32,7 +32,7 @@
             font-weight: bold;
             color: #555;
         }
-        input[type="email"] {
+        input[type="email"], select {
             width: 100%;
             padding: 12px;
             border: 2px solid #ddd;
@@ -40,16 +40,21 @@
             font-size: 16px;
             box-sizing: border-box;
         }
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
         button {
             background: linear-gradient(45deg, #F8FF13, #E6E600);
             color: black;
             padding: 12px 24px;
             border: none;
             border-radius: 5px;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
-            width: 100%;
             transition: transform 0.2s;
         }
         button:hover {
@@ -59,6 +64,10 @@
             background: #ccc;
             cursor: not-allowed;
             transform: none;
+        }
+        button.hostinger {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
         }
         .result {
             margin-top: 20px;
@@ -82,6 +91,15 @@
             border: 1px solid #b8daff;
             margin-bottom: 20px;
         }
+        .service-info {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -100,30 +118,56 @@
                 <input type="email" id="email" name="email" required placeholder="Enter your email address">
             </div>
             
-            <button type="submit" id="sendButton">Send Test Email</button>
+            <div class="button-group">
+                <button type="button" onclick="testService('original')" id="originalBtn">Test Original (Mandrill)</button>
+                <button type="button" onclick="testService('hostinger')" id="hostingerBtn" class="hostinger">Test Hostinger SMTP</button>
+            </div>
         </form>
+        
+        <div class="service-info">
+            <strong>Service Info:</strong><br>
+            • <strong>Original (Mandrill):</strong> Expected to fail - API key invalid<br>
+            • <strong>Hostinger SMTP:</strong> Uses your domain email (support@posewithdivine.com)
+        </div>
         
         <div id="result" class="result"></div>
     </div>
 
     <script>
-        document.getElementById('emailTestForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
+        async function testService(serviceType) {
             const email = document.getElementById('email').value;
-            const sendButton = document.getElementById('sendButton');
+            if (!email) {
+                alert('Please enter your email address first');
+                return;
+            }
+            
+            const originalBtn = document.getElementById('originalBtn');
+            const hostingerBtn = document.getElementById('hostingerBtn');
             const resultDiv = document.getElementById('result');
             
             // Reset result display
             resultDiv.style.display = 'none';
             resultDiv.className = 'result';
             
-            // Disable button and show loading
-            sendButton.disabled = true;
-            sendButton.textContent = 'Sending...';
+            // Disable buttons and show loading
+            originalBtn.disabled = true;
+            hostingerBtn.disabled = true;
+            
+            let endpoint;
+            let serviceName;
+            
+            if (serviceType === 'hostinger') {
+                endpoint = '/api/send-email-hostinger.php';
+                serviceName = 'Hostinger SMTP';
+                hostingerBtn.textContent = 'Testing Hostinger...';
+            } else {
+                endpoint = '/api/send-email.php';
+                serviceName = 'Original (Mandrill)';
+                originalBtn.textContent = 'Testing Original...';
+            }
             
             try {
-                const response = await fetch('/api/send-email.php', {
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -142,8 +186,10 @@
                     resultDiv.className = 'result success';
                     resultDiv.innerHTML = `
                         <strong>✅ Success!</strong><br>
-                        Test email sent successfully to <strong>${email}</strong><br>
-                        Check your inbox (and spam folder) for the test email.
+                        ${result.message}<br>
+                        Service: ${result.service || serviceName}<br>
+                        <small>Check your inbox (and spam folder) for the test email.</small>
+                        ${result.debug ? '<br><small>Debug: ' + JSON.stringify(result.debug) + '</small>' : ''}
                     `;
                 } else {
                     resultDiv.className = 'result error';
@@ -151,6 +197,7 @@
                         <strong>❌ Error:</strong><br>
                         ${result.error}<br>
                         ${result.details ? `<small>Details: ${result.details}</small>` : ''}
+                        ${result.instructions ? `<br><small>Instructions: ${JSON.stringify(result.instructions)}</small>` : ''}
                     `;
                 }
             } catch (error) {
@@ -162,11 +209,13 @@
                 `;
             }
             
-            // Show result and re-enable button
+            // Show result and re-enable buttons
             resultDiv.style.display = 'block';
-            sendButton.disabled = false;
-            sendButton.textContent = 'Send Test Email';
-        });
+            originalBtn.disabled = false;
+            hostingerBtn.disabled = false;
+            originalBtn.textContent = 'Test Original (Mandrill)';
+            hostingerBtn.textContent = 'Test Hostinger SMTP';
+        }
     </script>
 </body>
 </html> 

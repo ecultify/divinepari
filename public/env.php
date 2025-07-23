@@ -29,11 +29,35 @@ $_ENV['ALLOWED_ORIGINS'] = '*'; // Change to your domain for better security
 $_ENV['MAX_IMAGE_SIZE'] = '10485760'; // 10MB in bytes
 $_ENV['ALLOWED_IMAGE_TYPES'] = 'image/jpeg,image/png,image/jpg';
 
-// Mandrill Email Configuration
-$_ENV['MANDRILL_API_KEY'] = 'md-uHR1LFMjBFB7Yn6aBnl7uA';
+// EMAIL CONFIGURATION - MULTIPLE OPTIONS
+// Choose ONE of the following email services:
+
+// Option 1: Mandrill/Mailchimp Transactional (CURRENTLY NOT WORKING - API KEY INVALID)
+$_ENV['MANDRILL_API_KEY'] = 'md-uHR1LFMjBFB7Yn6aBnl7uA'; // INVALID - Need new key
 $_ENV['SMTP_HOST'] = 'smtp.mandrillapp.com';
-$_ENV['SMTP_PORT'] = '587'; // or 465 for SSL
+$_ENV['SMTP_PORT'] = '587';
 $_ENV['SMTP_USERNAME'] = 'support@posewithdivine.com';
+
+// Option 2: SendGrid (RECOMMENDED - Free tier: 100 emails/day)
+// Get API key from: https://sendgrid.com/
+// $_ENV['SENDGRID_API_KEY'] = 'SG.your_sendgrid_api_key_here';
+
+// Option 3: Gmail SMTP (EASIEST - Use your Gmail account)
+// Instructions:
+// 1. Enable 2-factor authentication on your Gmail account
+// 2. Generate App Password: https://support.google.com/accounts/answer/185833
+// 3. Use your Gmail address and the generated app password below
+// $_ENV['GMAIL_USERNAME'] = 'your-email@gmail.com';
+// $_ENV['GMAIL_APP_PASSWORD'] = 'your-16-character-app-password';
+
+// Option 4: Hostinger SMTP (BEST - Uses your domain email) - CONFIGURED ✅
+// Using official Hostinger SMTP settings
+$_ENV['HOSTINGER_SMTP_HOST'] = 'smtp.hostinger.com';
+$_ENV['HOSTINGER_SMTP_PORT'] = '465'; // SSL/TLS port
+$_ENV['HOSTINGER_SMTP_USERNAME'] = 'support@posewithdivine.com';
+$_ENV['HOSTINGER_SMTP_PASSWORD'] = 'Support_@_123';
+
+// Common email settings (used by all services)
 $_ENV['FROM_EMAIL'] = 'support@posewithdivine.com';
 $_ENV['FROM_NAME'] = 'Divine x Parimatch';
 $_ENV['EMAIL_ENABLED'] = true;

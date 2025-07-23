@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Service Tester - Divine x Parimatch</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .service-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .service-section.active {
+            border-color: #F8FF13;
+            background-color: #fefdf0;
+        }
+        .service-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .service-description {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="email"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background: linear-gradient(45deg, #F8FF13, #E6E600);
+            color: black;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #e2f3ff;
+            color: #0c5460;
+            border: 1px solid #b8daff;
+            margin-bottom: 20px;
+        }
+        .instructions {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-working { background-color: #28a745; }
+        .status-error { background-color: #dc3545; }
+        .status-unknown { background-color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Email Service Tester - Divine x Parimatch</h1>
+        
+        <div class="info">
+            <strong>📧 Test All Email Services</strong><br>
+            This tool helps you test different email services to find one that works.
+            The current Mandrill API key is invalid, so try the alternatives below.
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Your Email Address:</label>
+            <input type="email" id="email" name="email" required placeholder="Enter your email address">
+        </div>
+        
+        <!-- Mandrill Service -->
+        <div class="service-section" id="mandrill-section">
+            <div class="service-title">
+                <span class="status-indicator status-error"></span>
+                Option 1: Mandrill/Mailchimp Transactional
+            </div>
+            <div class="service-description">
+                Status: ❌ API Key Invalid - Need new Mailchimp account
+            </div>
+            <button onclick="testService('mandrill')" id="mandrill-btn">Test Mandrill (Expected to Fail)</button>
+            <div id="mandrill-result" class="result"></div>
+        </div>
+        
+        <!-- SendGrid Service -->
+        <div class="service-section" id="sendgrid-section">
+            <div class="service-title">
+                <span class="status-indicator status-unknown"></span>
+                Option 2: SendGrid (Recommended)
+            </div>
+            <div class="service-description">
+                Free tier: 100 emails/day. Most reliable option.
+            </div>
+            <div class="instructions">
+                <strong>Setup Required:</strong><br>
+                1. Sign up at <a href="https://sendgrid.com/" target="_blank">SendGrid.com</a><br>
+                2. Get your API key<br>
+                3. Add to env.php: <code>$_ENV['SENDGRID_API_KEY'] = 'SG.your_key_here';</code>
+            </div>
+            <button onclick="testService('sendgrid')" id="sendgrid-btn">Test SendGrid</button>
+            <div id="sendgrid-result" class="result"></div>
+        </div>
+        
+        <!-- Gmail Service -->
+        <div class="service-section" id="gmail-section">
+            <div class="service-title">
+                <span class="status-indicator status-unknown"></span>
+                Option 3: Gmail SMTP (Easiest)
+            </div>
+            <div class="service-description">
+                Use your Gmail account. Quick to set up.
+            </div>
+            <div class="instructions">
+                <strong>Setup Required:</strong><br>
+                1. Enable 2-factor authentication on Gmail<br>
+                2. Generate App Password in Gmail settings<br>
+                3. Add to env.php:<br>
+                <code>$_ENV['GMAIL_USERNAME'] = 'your-email@gmail.com';</code><br>
+                <code>$_ENV['GMAIL_APP_PASSWORD'] = 'your-app-password';</code>
+            </div>
+            <button onclick="testService('gmail')" id="gmail-btn">Test Gmail SMTP</button>
+            <div id="gmail-result" class="result"></div>
+        </div>
+        
+        <div class="info" style="margin-top: 30px;">
+            <strong>💡 Recommendations:</strong><br>
+            1. <strong>For immediate fix:</strong> Set up Gmail SMTP (easiest)<br>
+            2. <strong>For production:</strong> Use SendGrid (most reliable)<br>
+            3. <strong>For Mandrill:</strong> Create new Mailchimp account and get valid API key
+        </div>
+    </div>
+
+    <script>
+        async function testService(service) {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                alert('Please enter your email address first');
+                return;
+            }
+            
+            const btn = document.getElementById(service + '-btn');
+            const resultDiv = document.getElementById(service + '-result');
+            
+            // Reset result display
+            resultDiv.style.display = 'none';
+            resultDiv.className = 'result';
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.textContent = 'Testing...';
+            
+            // Determine endpoint
+            let endpoint;
+            switch(service) {
+                case 'mandrill':
+                    endpoint = '/api/send-email.php';
+                    break;
+                case 'sendgrid':
+                    endpoint = '/api/send-email-sendgrid.php';
+                    break;
+                case 'gmail':
+                    endpoint = '/api/send-email-gmail.php';
+                    break;
+            }
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        to: email,
+                        userName: 'Test User',
+                        posterUrl: 'https://example.com/test-poster.jpg',
+                        sessionId: 'test-' + Date.now()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ Success!</strong><br>
+                        ${result.message}<br>
+                        Service: ${result.service || service}<br>
+                        <small>Check your inbox (and spam folder) for the test email.</small>
+                    `;
+                    updateServiceStatus(service, 'working');
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <strong>❌ Error:</strong><br>
+                        ${result.error}<br>
+                        ${result.details ? `<small>Details: ${result.details}</small>` : ''}
+                        ${result.instructions ? `<br><small>Instructions: ${JSON.stringify(result.instructions)}</small>` : ''}
+                    `;
+                    updateServiceStatus(service, 'error');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <strong>❌ Network Error:</strong><br>
+                    Failed to connect to email service.<br>
+                    <small>Error: ${error.message}</small>
+                `;
+                updateServiceStatus(service, 'error');
+            }
+            
+            // Show result and re-enable button
+            resultDiv.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = getButtonText(service);
+        }
+        
+        function updateServiceStatus(service, status) {
+            const section = document.getElementById(service + '-section');
+            const indicator = section.querySelector('.status-indicator');
+            
+            indicator.className = 'status-indicator status-' + status;
+            
+            if (status === 'working') {
+                section.classList.add('active');
+            }
+        }
+        
+        function getButtonText(service) {
+            const texts = {
+                'mandrill': 'Test Mandrill (Expected to Fail)',
+                'sendgrid': 'Test SendGrid',
+                'gmail': 'Test Gmail SMTP'
+            };
+            return texts[service] || 'Test Service';
+        }
+    </script>
+</body>
+</html> 
