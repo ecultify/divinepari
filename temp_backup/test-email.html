@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Testing Interface - Divine x Parimatch</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #F8FF13;
+            color: #000;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #e6ec11;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+        .success {
+            border-color: #28a745;
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .loading {
+            border-color: #007bff;
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        .response pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        .preset-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .preset-btn {
+            background-color: #6c757d;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            flex: 1;
+            min-width: 120px;
+        }
+        .preset-btn:hover {
+            background-color: #5a6268;
+        }
+        .info-box {
+            background-color: #e7f3ff;
+            border: 1px solid #b8daff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 Email Testing Interface</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            Test the Divine x Parimatch email sending functionality
+        </p>
+
+        <div class="info-box">
+            <h3>ℹ️ Testing Instructions</h3>
+            <ul>
+                <li><strong>Email:</strong> Use a valid email address you have access to</li>
+                <li><strong>User Name:</strong> Any name for personalization</li>
+                <li><strong>Poster URL:</strong> Must be a valid URL (use sample or real Supabase URL)</li>
+                <li><strong>Session ID:</strong> Any unique identifier for tracking</li>
+            </ul>
+        </div>
+
+        <div class="preset-buttons">
+            <button class="preset-btn" onclick="loadTestData()">Load Test Data</button>
+            <button class="preset-btn" onclick="loadSamplePoster()">Sample Poster URL</button>
+            <button class="preset-btn" onclick="generateSessionId()">Generate Session ID</button>
+            <button class="preset-btn" onclick="clearForm()">Clear Form</button>
+        </div>
+
+        <form id="emailForm">
+            <div class="form-group">
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" name="email" required 
+                       placeholder="test@example.com" />
+            </div>
+
+            <div class="form-group">
+                <label for="userName">User Name</label>
+                <input type="text" id="userName" name="userName" 
+                       placeholder="John Doe" />
+            </div>
+
+            <div class="form-group">
+                <label for="posterUrl">Poster URL *</label>
+                <input type="url" id="posterUrl" name="posterUrl" required 
+                       placeholder="https://supabase-url/storage/poster.jpg" />
+            </div>
+
+            <div class="form-group">
+                <label for="sessionId">Session ID *</label>
+                <input type="text" id="sessionId" name="sessionId" required 
+                       placeholder="session_12345" />
+            </div>
+
+            <button type="submit" id="sendBtn">Send Test Email</button>
+        </form>
+
+        <div id="response" class="response" style="display: none;"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('emailForm');
+        const responseDiv = document.getElementById('response');
+        const sendBtn = document.getElementById('sendBtn');
+
+        // Load test data
+        function loadTestData() {
+            document.getElementById('email').value = 'test@example.com';
+            document.getElementById('userName').value = 'Divine Fan';
+            document.getElementById('posterUrl').value = 'https://nuoizrqsnxoldzcvwszu.supabase.co/storage/v1/object/public/generated-posters/sample-poster.jpg';
+            document.getElementById('sessionId').value = 'test_session_' + Date.now();
+        }
+
+        // Load sample poster URL
+        function loadSamplePoster() {
+            document.getElementById('posterUrl').value = 'https://nuoizrqsnxoldzcvwszu.supabase.co/storage/v1/object/public/generated-posters/sample-poster.jpg';
+        }
+
+        // Generate random session ID
+        function generateSessionId() {
+            const sessionId = 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            document.getElementById('sessionId').value = sessionId;
+        }
+
+        // Clear form
+        function clearForm() {
+            form.reset();
+            responseDiv.style.display = 'none';
+        }
+
+        // Show response
+        function showResponse(message, type, data = null) {
+            responseDiv.className = `response ${type}`;
+            
+            let content = `<strong>${type.toUpperCase()}:</strong> ${message}`;
+            
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            responseDiv.innerHTML = content;
+            responseDiv.style.display = 'block';
+            
+            // Scroll to response
+            responseDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const data = {
+                to: formData.get('email'),
+                userName: formData.get('userName') || 'there',
+                posterUrl: formData.get('posterUrl'),
+                sessionId: formData.get('sessionId')
+            };
+
+            // Validation
+            if (!data.to || !data.posterUrl || !data.sessionId) {
+                showResponse('Please fill in all required fields', 'error');
+                return;
+            }
+
+            // Show loading state
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
+            showResponse('Sending email...', 'loading');
+
+            try {
+                const response = await fetch('/api/send-email.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showResponse(result.message, 'success', result.data);
+                } else {
+                    showResponse(result.message, 'error', result.debug);
+                }
+
+            } catch (error) {
+                showResponse('Network error: ' + error.message, 'error');
+                console.error('Email test error:', error);
+            } finally {
+                // Reset button
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send Test Email';
+            }
+        });
+
+        // Load test data by default
+        window.addEventListener('load', () => {
+            loadTestData();
+        });
+    </script>
+</body>
+</html> 

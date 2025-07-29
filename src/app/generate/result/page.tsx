@@ -674,7 +674,7 @@ function ResultPageContent() {
                         <span style={{ color: '#F8FF13' }}>✨ In a hurry?</span>
                       </p>
                       <p className="text-white text-sm font-poppins leading-relaxed">
-                        Feel free to leave the website if you're in a hurry—your poster is on its way to your email inbox.
+                        Feel free to leave the website if you&apos;re in a hurry—your poster is on its way to your email inbox.
                       </p>
                     </div>
                   )}

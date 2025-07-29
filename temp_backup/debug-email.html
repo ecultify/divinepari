@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Debug Interface - Divine x Parimatch</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #00ff00;
+        }
+        .container {
+            background-color: #2d2d2d;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #444;
+        }
+        h1 {
+            color: #00ff00;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        h2 {
+            color: #ffff00;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+        .status-good {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        .status-warning {
+            color: #ffaa00;
+            font-weight: bold;
+        }
+        .status-error {
+            color: #ff0000;
+            font-weight: bold;
+        }
+        .debug-section {
+            background-color: #1a1a1a;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border: 1px solid #333;
+        }
+        .debug-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px dotted #333;
+        }
+        .debug-item:last-child {
+            border-bottom: none;
+        }
+        .debug-label {
+            font-weight: bold;
+            color: #00aaff;
+        }
+        .debug-value {
+            color: #ffffff;
+            font-family: monospace;
+        }
+        button {
+            background-color: #00ff00;
+            color: #000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #00cc00;
+        }
+        button:disabled {
+            background-color: #666;
+            color: #999;
+            cursor: not-allowed;
+        }
+        .test-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #444;
+        }
+        .test-success {
+            background-color: #0a4a0a;
+            border-color: #00ff00;
+        }
+        .test-error {
+            background-color: #4a0a0a;
+            border-color: #ff0000;
+        }
+        .test-warning {
+            background-color: #4a4a0a;
+            border-color: #ffaa00;
+        }
+        pre {
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+            border: 1px solid #333;
+        }
+        .loading {
+            color: #00aaff;
+        }
+        .button-group {
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Email Debug Interface</h1>
+        <p style="text-align: center; color: #888; margin-bottom: 30px;">
+            Diagnostic tools for Divine x Parimatch email system
+        </p>
+
+        <div class="button-group">
+            <button onclick="runFullDiagnostic()">Run Full Diagnostic</button>
+            <button onclick="testApiConnectivity()">Test API Connectivity</button>
+            <button onclick="validateEnvironment()">Check Environment</button>
+            <button onclick="testMandrillConnection()">Test Mandrill API</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+
+        <h2>📊 System Information</h2>
+        <div class="debug-section" id="systemInfo">
+            <div class="debug-item">
+                <span class="debug-label">Loading system information...</span>
+                <span class="debug-value loading">Please wait...</span>
+            </div>
+        </div>
+
+        <h2>🔐 Environment Variables</h2>
+        <div class="debug-section" id="envVars">
+            <div class="debug-item">
+                <span class="debug-label">Loading environment variables...</span>
+                <span class="debug-value loading">Please wait...</span>
+            </div>
+        </div>
+
+        <h2>🌐 API Connectivity</h2>
+        <div class="debug-section" id="apiConnectivity">
+            <div class="debug-item">
+                <span class="debug-label">Email API Status</span>
+                <span class="debug-value" id="emailApiStatus">Not tested</span>
+            </div>
+            <div class="debug-item">
+                <span class="debug-label">Mandrill API Status</span>
+                <span class="debug-value" id="mandrillApiStatus">Not tested</span>
+            </div>
+        </div>
+
+        <h2>🧪 Test Results</h2>
+        <div id="testResults"></div>
+
+        <h2>📋 Troubleshooting Guide</h2>
+        <div class="debug-section">
+            <h3 style="color: #ffff00;">Common Issues & Solutions</h3>
+            <ul style="color: #ccc;">
+                <li><strong>Email API returning 500:</strong> Check Mandrill API key and environment variables</li>
+                <li><strong>CORS errors:</strong> Verify CORS headers are set correctly in PHP</li>
+                <li><strong>Invalid email format:</strong> Ensure email validation is working properly</li>
+                <li><strong>Missing poster URL:</strong> Check Supabase storage configuration and URL generation</li>
+                <li><strong>Mandrill quota exceeded:</strong> Check your Mandrill account limits and usage</li>
+                <li><strong>PHP errors:</strong> Check server error logs for detailed PHP error messages</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Initialize diagnostics on page load
+        window.addEventListener('load', () => {
+            loadSystemInfo();
+            validateEnvironment();
+        });
+
+        function loadSystemInfo() {
+            const systemInfo = document.getElementById('systemInfo');
+            systemInfo.innerHTML = `
+                <div class="debug-item">
+                    <span class="debug-label">Browser</span>
+                    <span class="debug-value">${navigator.userAgent}</span>
+                </div>
+                <div class="debug-item">
+                    <span class="debug-label">Current URL</span>
+                    <span class="debug-value">${window.location.href}</span>
+                </div>
+                <div class="debug-item">
+                    <span class="debug-label">Current Time</span>
+                    <span class="debug-value">${new Date().toISOString()}</span>
+                </div>
+                <div class="debug-item">
+                    <span class="debug-label">Local Storage Available</span>
+                    <span class="debug-value status-${typeof(Storage) !== "undefined" ? 'good' : 'error'}">
+                        ${typeof(Storage) !== "undefined" ? 'YES' : 'NO'}
+                    </span>
+                </div>
+            `;
+        }
+
+        async function validateEnvironment() {
+            const envVars = document.getElementById('envVars');
+            
+            try {
+                const response = await fetch('/api/send-email.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}) // Empty request to trigger validation
+                });
+
+                if (response.ok) {
+                    envVars.innerHTML = `
+                        <div class="debug-item">
+                            <span class="debug-label">PHP API Status</span>
+                            <span class="debug-value status-good">ACCESSIBLE</span>
+                        </div>
+                        <div class="debug-item">
+                            <span class="debug-label">Environment File</span>
+                            <span class="debug-value status-good">LOADED</span>
+                        </div>
+                        <div class="debug-item">
+                            <span class="debug-label">Email Service</span>
+                            <span class="debug-value status-good">ENABLED</span>
+                        </div>
+                    `;
+                } else {
+                    envVars.innerHTML = `
+                        <div class="debug-item">
+                            <span class="debug-label">PHP API Status</span>
+                            <span class="debug-value status-error">ERROR (${response.status})</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                envVars.innerHTML = `
+                    <div class="debug-item">
+                        <span class="debug-label">PHP API Status</span>
+                        <span class="debug-value status-error">CONNECTION FAILED</span>
+                    </div>
+                    <div class="debug-item">
+                        <span class="debug-label">Error</span>
+                        <span class="debug-value status-error">${error.message}</span>
+                    </div>
+                `;
+            }
+        }
+
+        async function testApiConnectivity() {
+            const emailApiStatus = document.getElementById('emailApiStatus');
+            emailApiStatus.textContent = 'Testing...';
+            emailApiStatus.className = 'debug-value loading';
+
+            try {
+                const response = await fetch('/api/send-email.php', {
+                    method: 'OPTIONS'
+                });
+
+                if (response.ok) {
+                    emailApiStatus.textContent = 'CONNECTED';
+                    emailApiStatus.className = 'debug-value status-good';
+                } else {
+                    emailApiStatus.textContent = `ERROR (${response.status})`;
+                    emailApiStatus.className = 'debug-value status-error';
+                }
+            } catch (error) {
+                emailApiStatus.textContent = 'CONNECTION FAILED';
+                emailApiStatus.className = 'debug-value status-error';
+            }
+        }
+
+        async function testMandrillConnection() {
+            const mandrillApiStatus = document.getElementById('mandrillApiStatus');
+            mandrillApiStatus.textContent = 'Testing...';
+            mandrillApiStatus.className = 'debug-value loading';
+
+            try {
+                // Test with minimal valid data
+                const response = await fetch('/api/send-email.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        to: 'test@example.com',
+                        posterUrl: 'https://example.com/test.jpg',
+                        sessionId: 'debug_test'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    mandrillApiStatus.textContent = 'CONNECTED & WORKING';
+                    mandrillApiStatus.className = 'debug-value status-good';
+                } else {
+                    mandrillApiStatus.textContent = `API ERROR: ${result.message}`;
+                    mandrillApiStatus.className = 'debug-value status-error';
+                }
+            } catch (error) {
+                mandrillApiStatus.textContent = 'CONNECTION FAILED';
+                mandrillApiStatus.className = 'debug-value status-error';
+            }
+        }
+
+        async function runFullDiagnostic() {
+            addTestResult('🔄 Running full diagnostic...', 'test-warning');
+            
+            await validateEnvironment();
+            await testApiConnectivity();
+            await testMandrillConnection();
+            
+            addTestResult('✅ Full diagnostic completed', 'test-success');
+        }
+
+        function addTestResult(message, className) {
+            const testResults = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${className}`;
+            resultDiv.innerHTML = `
+                <strong>${new Date().toLocaleTimeString()}</strong>: ${message}
+            `;
+            testResults.appendChild(resultDiv);
+            
+            // Scroll to bottom
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+        }
+
+        // Auto-refresh diagnostics every 30 seconds
+        setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                validateEnvironment();
+            }
+        }, 30000);
+    </script>
+</body>
+</html> 
