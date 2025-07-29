@@ -132,12 +132,61 @@ try {
         return $httpCode === 201; // 201 = Created (success)
     }
 
+    // Function to query Supabase table
+    function querySupabaseTable($table, $params = []) {
+        global $SUPABASE_URL, $SUPABASE_SERVICE_KEY;
+        
+        $url = $SUPABASE_URL . '/rest/v1/' . $table;
+        
+        // Add parameters to URL
+        if (!empty($params)) {
+            $queryParams = [];
+            foreach ($params as $key => $value) {
+                $queryParams[] = $key . '=' . urlencode($value);
+            }
+            $url .= '?' . implode('&', $queryParams);
+        }
+        
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'apikey: ' . $SUPABASE_SERVICE_KEY,
+            'Authorization: Bearer ' . $SUPABASE_SERVICE_KEY
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode !== 200) {
+            debug_log('Supabase table query failed', [
+                'table' => $table,
+                'status' => $httpCode,
+                'response' => $response,
+                'params' => $params
+            ]);
+            return false;
+        }
+        
+        return json_decode($response, true);
+    }
+
     // Get next pending job
     debug_log('Getting next pending job...');
+    
+    // First, let's check what pending jobs exist
+    $pendingJobsCheck = querySupabaseTable('background_jobs', [
+        'status' => 'eq.pending',
+        'select' => 'id,session_id,status,attempts,max_attempts,next_retry_at,created_at'
+    ]);
+    debug_log('Pending jobs in table', ['jobs' => $pendingJobsCheck]);
+    
     $jobResult = callSupabaseFunction('get_next_pending_job');
+    debug_log('get_next_pending_job result', ['result' => $jobResult, 'is_empty' => empty($jobResult)]);
     
     if (!$jobResult || empty($jobResult)) {
-        debug_log('No pending jobs found');
+        debug_log('No pending jobs found by function');
         ob_end_clean();
         echo json_encode(['success' => true, 'message' => 'No pending jobs']);
         exit;
