@@ -107,6 +107,31 @@ try {
         return $httpCode === 204; // 204 = No Content (success)
     }
 
+    // Function to insert into Supabase table (for upsert operations)
+    function insertIntoSupabaseTable($table, $data) {
+        global $SUPABASE_URL, $SUPABASE_SERVICE_KEY;
+        
+        $url = $SUPABASE_URL . '/rest/v1/' . $table;
+        
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'apikey: ' . $SUPABASE_SERVICE_KEY,
+            'Authorization: Bearer ' . $SUPABASE_SERVICE_KEY,
+            'Content-Type: application/json',
+            'Prefer: return=minimal'
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        return $httpCode === 201; // 201 = Created (success)
+    }
+
     // Get next pending job
     debug_log('Getting next pending job...');
     $jobResult = callSupabaseFunction('get_next_pending_job');
@@ -125,6 +150,12 @@ try {
     $attempts = $job['attempts'];
 
     debug_log('Processing job', ['job_id' => $jobId, 'session_id' => $sessionId, 'attempts' => $attempts]);
+
+    // Ensure session exists in user_sessions table
+    $sessionExists = ensureSessionExists($sessionId);
+    if (!$sessionExists) {
+        debug_log('Failed to create/verify session', ['session_id' => $sessionId]);
+    }
 
     // Check if email was already sent to avoid duplicates
     $emailAlreadySent = checkIfEmailAlreadySent($sessionId);
@@ -176,13 +207,30 @@ try {
             'email_sent' => $emailResult
         ]);
 
-        // Mark in generation_results table
+        // Mark in generation_results table (create if doesn't exist)
         if ($emailResult) {
-            updateSupabaseTable('generation_results', [
+            // First try to update existing record
+            $updateResult = updateSupabaseTable('generation_results', [
                 'email_sent_via_background' => true,
                 'user_email' => $userEmail,
                 'user_name' => $userName
             ], ['session_id' => $sessionId]);
+            
+            // If update failed (record doesn't exist), create new record
+            if (!$updateResult) {
+                debug_log('Generation result not found, creating new record');
+                insertIntoSupabaseTable('generation_results', [
+                    'session_id' => $sessionId,
+                    'gender' => $gender,
+                    'poster_selected' => $posterName,
+                    'user_image_uploaded' => true,
+                    'processing_status' => 'completed',
+                    'result_image_generated' => true,
+                    'email_sent_via_background' => true,
+                    'user_email' => $userEmail,
+                    'user_name' => $userName
+                ]);
+            }
         }
 
         debug_log('Job completed successfully', ['email_sent' => $emailResult]);
@@ -226,6 +274,39 @@ try {
     echo json_encode([
         'success' => false, 
         'error' => $e->getMessage()
+    ]);
+}
+
+// Helper function to ensure session exists
+function ensureSessionExists($sessionId) {
+    global $SUPABASE_URL, $SUPABASE_SERVICE_KEY;
+    
+    // First check if session exists
+    $url = $SUPABASE_URL . '/rest/v1/user_sessions?session_id=eq.' . urlencode($sessionId);
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'apikey: ' . $SUPABASE_SERVICE_KEY,
+        'Authorization: Bearer ' . $SUPABASE_SERVICE_KEY
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode === 200) {
+        $data = json_decode($response, true);
+        if (!empty($data)) {
+            return true; // Session exists
+        }
+    }
+    
+    // Session doesn't exist, create it
+    debug_log('Creating missing session', ['session_id' => $sessionId]);
+    return insertIntoSupabaseTable('user_sessions', [
+        'session_id' => $sessionId
     ]);
 }
 
