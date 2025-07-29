@@ -180,14 +180,19 @@ export default function GeneratePage() {
                         setConsentChecked(false);
                       }
                     }}
-                    className="w-5 h-5 rounded border-2 border-yellow-400 bg-transparent appearance-none checked:bg-yellow-400 checked:border-yellow-400 relative cursor-pointer"
+                    className="w-5 h-5 rounded border-2 bg-transparent appearance-none relative cursor-pointer"
                     style={{
+                      borderColor: '#F8FF13',
+                      backgroundColor: consentChecked ? '#F8FF13' : 'transparent',
                       backgroundImage: consentChecked ? `url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='black' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='m13.854 3.646-7.5 7.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6 10.293l7.146-7.147a.5.5 0 0 1 .708.708z'/%3e%3c/svg%3e")` : 'none'
                     }}
                   />
                   <label 
                     htmlFor="consent" 
-                    className="text-white font-poppins text-sm cursor-pointer hover:text-yellow-400"
+                    className="text-white font-poppins text-sm cursor-pointer"
+                    style={{ color: 'white' }}
+                    onMouseEnter={(e) => e.target.style.color = '#F8FF13'}
+                    onMouseLeave={(e) => e.target.style.color = 'white'}
                     onClick={() => setShowConsentModal(true)}
                   >
                     I agree to terms and conditions
@@ -268,7 +273,27 @@ export default function GeneratePage() {
 
               {/* Action Buttons */}
               <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
-                {/* Decline Button */}
+                {/* Accept Button (Mobile - Top) */}
+                <button
+                  onClick={() => {
+                    setConsentChecked(true);
+                    setShowConsentModal(false);
+                  }}
+                  className="relative transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center lg:hidden"
+                  style={{
+                    background: '#F8FF13',
+                    border: '3px solid transparent',
+                    backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    borderRadius: '3.29px',
+                    padding: '16px 48px',
+                  }}
+                >
+                  <span className="block transform skew-x-12 font-parimatch font-bold text-black text-3xl">ACCEPT</span>
+                </button>
+
+                {/* Decline Button (Mobile - Bottom) */}
                 <button
                   onClick={() => {
                     setConsentChecked(false);
@@ -309,26 +334,6 @@ export default function GeneratePage() {
                   <span className="block transform skew-x-12 font-parimatch font-bold text-white w-32 h-22 flex items-center justify-center text-3xl">
                     DECLINE
                   </span>
-                </button>
-
-                {/* Accept Button */}
-                <button
-                  onClick={() => {
-                    setConsentChecked(true);
-                    setShowConsentModal(false);
-                  }}
-                  className="relative transform -skew-x-12 transition-all duration-200 hover:scale-105 flex items-center justify-center lg:hidden"
-                  style={{
-                    background: '#F8FF13',
-                    border: '3px solid transparent',
-                    backgroundImage: 'linear-gradient(#F8FF13, #F8FF13), linear-gradient(45deg, #8F9093, #C0C4C8, #BDBDBD, #959FA7, #666666)',
-                    backgroundOrigin: 'border-box',
-                    backgroundClip: 'padding-box, border-box',
-                    borderRadius: '3.29px',
-                    padding: '16px 48px',
-                  }}
-                >
-                  <span className="block transform skew-x-12 font-parimatch font-bold text-black text-3xl">ACCEPT</span>
                 </button>
                 
                 {/* Desktop Accept Button */}
