@@ -353,9 +353,16 @@ function processFaceSwapBackground($userImageUrl, $posterName, $sessionId) {
         }
         
         // Get poster image path
-        $posterPath = __DIR__ . '/../images/posters/' . $posterName . '.avif';
+        // Check if posterName already has extension
+        if (pathinfo($posterName, PATHINFO_EXTENSION) === '') {
+            $posterPath = __DIR__ . '/../images/posters/' . $posterName . '.avif';
+        } else {
+            $posterPath = __DIR__ . '/../images/posters/' . $posterName;
+        }
+        
         if (!file_exists($posterPath)) {
-            throw new Exception('Poster file not found: ' . $posterName);
+            debug_log('Poster file not found', ['posterName' => $posterName, 'posterPath' => $posterPath]);
+            throw new Exception('Poster file not found: ' . $posterName . ' (Path: ' . $posterPath . ')');
         }
         
         $posterData = file_get_contents($posterPath);
