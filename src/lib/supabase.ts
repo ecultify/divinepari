@@ -44,6 +44,25 @@ export interface GenerationResult {
   error_message?: string
 }
 
+export interface BackgroundJob {
+  id?: string
+  session_id: string
+  job_type: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  priority?: number
+  input_data: any
+  result_data?: any
+  error_message?: string
+  attempts?: number
+  max_attempts?: number
+  created_at?: string
+  started_at?: string
+  completed_at?: string
+  next_retry_at?: string
+  email_sent?: boolean
+  email_sent_at?: string
+}
+
 export interface ImageStorage {
   id?: string
   session_id: string
@@ -253,6 +272,97 @@ export const uploadBase64Image = async (
   } catch (error) {
     console.error('Error uploading base64 image:', error)
     return null
+  }
+}
+
+// Background Job functions
+export async function queueBackgroundJob(
+  sessionId: string,
+  inputData: {
+    gender: string
+    posterName: string
+    userImageUrl: string
+    userName?: string
+    userEmail?: string
+  },
+  priority: number = 1
+): Promise<boolean> {
+  try {
+    console.log('Queuing background job for session:', sessionId);
+    
+    const jobData: Omit<BackgroundJob, 'id' | 'created_at'> = {
+      session_id: sessionId,
+      job_type: 'face_swap_generation',
+      status: 'pending',
+      priority,
+      input_data: inputData,
+      attempts: 0,
+      max_attempts: 3
+    };
+
+    const { error } = await supabase
+      .from('background_jobs')
+      .insert([jobData]);
+
+    if (error) {
+      console.error('Error queuing background job:', error);
+      return false;
+    }
+
+    console.log('Background job queued successfully');
+    return true;
+  } catch (error) {
+    console.error('Exception queuing background job:', error);
+    return false;
+  }
+}
+
+export async function checkIfEmailAlreadySent(sessionId: string): Promise<boolean> {
+  try {
+    // Check if email was sent via normal flow
+    const { data: generationResult } = await supabase
+      .from('generation_results')
+      .select('email_sent, email_sent_via_background')
+      .eq('session_id', sessionId)
+      .single();
+
+    if (generationResult?.email_sent || generationResult?.email_sent_via_background) {
+      return true;
+    }
+
+    // Check if email was sent via background job
+    const { data: backgroundJob } = await supabase
+      .from('background_jobs')
+      .select('email_sent')
+      .eq('session_id', sessionId)
+      .eq('status', 'completed')
+      .eq('email_sent', true)
+      .limit(1)
+      .single();
+
+    return !!backgroundJob;
+  } catch (error) {
+    console.error('Error checking email status:', error);
+    return false;
+  }
+}
+
+export async function markEmailSentViaBackground(sessionId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('generation_results')
+      .update({ email_sent_via_background: true })
+      .eq('session_id', sessionId);
+
+    if (error) {
+      console.error('Error marking email sent via background:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Exception marking email sent via background:', error);
+    return false;
   }
 }
 

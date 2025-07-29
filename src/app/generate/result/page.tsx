@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { trackUserStep, updateGenerationResult, uploadBase64Image, trackDownload } from '../../../lib/supabase';
+import { trackUserStep, updateGenerationResult, uploadBase64Image, trackDownload, checkIfEmailAlreadySent } from '../../../lib/supabase';
 
 function ResultPageContent() {
   const [loading, setLoading] = useState(true);
@@ -12,6 +12,7 @@ function ResultPageContent() {
   const [sessionId, setSessionId] = useState<string>('');
   const [hairSwappedImage, setHairSwappedImage] = useState<string | null>(null);
   const [originalFaceSwapImage, setOriginalFaceSwapImage] = useState<string | null>(null);
+  const [showLeaveEarlyMessage, setShowLeaveEarlyMessage] = useState(false);
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -27,6 +28,13 @@ function ResultPageContent() {
       
       if (!userEmail) {
         console.log('No email found in localStorage, skipping email notification');
+        return;
+      }
+
+      // Check if email was already sent to avoid duplicates
+      const emailAlreadySent = await checkIfEmailAlreadySent(sessionId);
+      if (emailAlreadySent) {
+        console.log('Email already sent for this session, skipping duplicate');
         return;
       }
 
@@ -94,6 +102,14 @@ function ResultPageContent() {
 
     if (storedUserImage && storedPoster && storedGender) {
     processFaceSwap(storedUserImage, storedPoster, storedGender, currentSessionId);
+    
+    // Show "leave early" message after 30 seconds
+    const leaveEarlyTimer = setTimeout(() => {
+      setShowLeaveEarlyMessage(true);
+    }, 30000); // 30 seconds
+
+    // Cleanup timer on component unmount or when loading finishes
+    return () => clearTimeout(leaveEarlyTimer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
@@ -261,6 +277,7 @@ function ResultPageContent() {
         // Brief delay to show 100% completion, then proceed
         setTimeout(() => {
           setLoading(false);
+          setShowLeaveEarlyMessage(false); // Hide message when processing completes
         }, 800);
         
         console.log('Face and hair swap completed successfully with FaceSwap v4!');
@@ -640,7 +657,7 @@ function ResultPageContent() {
                   </p>
                   
                   {/* Progress Bar */}
-                  <div className="w-full max-w-md lg:max-w-lg bg-gray-600 rounded-full h-3 mx-auto">
+                  <div className="w-full max-w-md lg:max-w-lg bg-gray-600 rounded-full h-3 mx-auto mb-4">
                     <div 
                       className="h-3 rounded-full transition-all duration-500"
                       style={{
@@ -649,6 +666,18 @@ function ResultPageContent() {
                       }}
                     ></div>
                   </div>
+                  
+                  {/* Leave Early Message - Shows after 30 seconds */}
+                  {showLeaveEarlyMessage && (
+                    <div className="text-center mt-4 p-4 border border-yellow-400 rounded-lg bg-black bg-opacity-60">
+                      <p className="text-white text-sm font-poppins mb-2">
+                        <span style={{ color: '#F8FF13' }}>✨ In a hurry?</span>
+                      </p>
+                      <p className="text-white text-sm font-poppins leading-relaxed">
+                        Feel free to leave the website if you're in a hurry—your poster is on its way to your email inbox.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

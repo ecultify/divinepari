@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { trackUserStep, trackGenerationResult, uploadBase64Image } from '../../../lib/supabase';
+import { trackUserStep, trackGenerationResult, uploadBase64Image, queueBackgroundJob } from '../../../lib/supabase';
 
 function UploadPhotoPageContent() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -62,6 +62,22 @@ function UploadPhotoPageContent() {
             file.name
           );
 
+          // Queue background job as backup for users who might leave
+          const userName = localStorage.getItem('userName') || '';
+          const userEmail = localStorage.getItem('userEmail') || '';
+          
+          if (uploadResult && userEmail && gender && selectedPoster) {
+            await queueBackgroundJob(sessionId, {
+              gender: gender,
+              posterName: selectedPoster,
+              userImageUrl: uploadResult.url,
+              userName: userName,
+              userEmail: userEmail
+            });
+            
+            console.log('Background job queued as backup for session:', sessionId);
+          }
+
           await trackUserStep(sessionId, 'photo_upload', {
             action: 'photo_uploaded',
             file_type: file.type,
@@ -71,6 +87,7 @@ function UploadPhotoPageContent() {
             image_uploaded_to_storage: !!uploadResult,
             storage_url: uploadResult?.url,
             storage_path: uploadResult?.path,
+            background_job_queued: !!(uploadResult && userEmail),
             timestamp: new Date().toISOString()
           });
         }
