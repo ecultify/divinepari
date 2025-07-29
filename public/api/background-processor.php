@@ -432,14 +432,12 @@ function processFaceSwapBackground($userImageUrl, $posterName, $sessionId) {
         $sourceImageBase64 = base64_encode($resizedUserData);
         $targetImageBase64 = base64_encode($extractedSideData);
         
-        // Call Segmind API
+        // Call Segmind API (use same parameters as frontend)
         $faceSwapData = [
-            'source_image_base64' => $sourceImageBase64,
-            'target_image_base64' => $targetImageBase64,
-            'face_restore' => true,
-            'face_upsample' => true,
-            'upscale' => 1,
-            'codeformer_fidelity' => 0.8,
+            'source_image' => $sourceImageBase64,
+            'target_image' => $targetImageBase64,
+            'model_type' => 'quality',
+            'swap_type' => 'head',
             'style_type' => 'normal',
             'seed' => rand(1, 1000000),
             'image_format' => 'png',
@@ -463,7 +461,14 @@ function processFaceSwapBackground($userImageUrl, $posterName, $sessionId) {
         curl_close($ch);
         
         if ($httpCode !== 200) {
-            throw new Exception('Segmind API request failed with status: ' . $httpCode);
+            debug_log('Segmind API failed', [
+                'status' => $httpCode,
+                'response' => $response,
+                'source_image_size' => strlen($sourceImageBase64),
+                'target_image_size' => strlen($targetImageBase64),
+                'poster_name' => $posterName
+            ]);
+            throw new Exception('Segmind API request failed with status: ' . $httpCode . ' - Response: ' . $response);
         }
         
         $responseData = json_decode($response, true);
