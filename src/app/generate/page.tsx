@@ -191,8 +191,8 @@ export default function GeneratePage() {
                     htmlFor="consent" 
                     className="text-white font-poppins text-sm cursor-pointer"
                     style={{ color: 'white' }}
-                    onMouseEnter={(e) => e.target.style.color = '#F8FF13'}
-                    onMouseLeave={(e) => e.target.style.color = 'white'}
+                    onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#F8FF13'}
+                    onMouseLeave={(e) => (e.target as HTMLElement).style.color = 'white'}
                     onClick={() => setShowConsentModal(true)}
                   >
                     I agree to terms and conditions
