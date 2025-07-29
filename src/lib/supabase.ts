@@ -89,15 +89,24 @@ export interface DownloadTracking {
 // Helper functions for tracking
 export const trackUserSession = async (sessionId: string) => {
   try {
+    // Use upsert to handle existing sessions
     const { data, error } = await supabase
       .from('user_sessions')
-      .insert([{ session_id: sessionId }])
+      .upsert([{ session_id: sessionId }], { 
+        onConflict: 'session_id',
+        ignoreDuplicates: false 
+      })
       .select()
 
-    if (error) throw error
+    if (error) {
+      console.error('Error tracking user session:', error);
+      return null;
+    }
+    
+    console.log('Session tracked successfully:', sessionId);
     return data
   } catch (error) {
-    console.error('Error tracking user session:', error)
+    console.error('Exception tracking user session:', error)
     return null
   }
 }

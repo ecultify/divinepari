@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { trackUserStep, trackGenerationResult, uploadBase64Image, queueBackgroundJob } from '../../../lib/supabase';
+import { trackUserStep, trackGenerationResult, uploadBase64Image, queueBackgroundJob, trackUserSession } from '../../../lib/supabase';
 
 function UploadPhotoPageContent() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -32,6 +32,10 @@ function UploadPhotoPageContent() {
       setSessionId(currentSessionId);
       
       if (currentSessionId) {
+        // Ensure session exists in database (create if missing)
+        console.log('Ensuring session exists in database for:', currentSessionId);
+        await trackUserSession(currentSessionId);
+        
         // Track that user reached photo upload
         await trackUserStep(currentSessionId, 'photo_upload', {
           page: 'photo_upload',
