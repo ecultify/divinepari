@@ -36,7 +36,7 @@ debug_log('Background processor started');
 try {
     // Get Supabase configuration
     $SUPABASE_URL = $_ENV['SUPABASE_URL'] ?? 'https://nuoizrqsnxoldzcvwszu.supabase.co';
-    $SUPABASE_SERVICE_KEY = $_ENV['SUPABASE_SERVICE_KEY'] ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51b2l6cnFzbnhvbGR6Y3Z3c3p1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDI1MDA5MCwiZXhwIjoyMDY1ODI2MDkwfQ.mRnT_TZWnLzDyLJoiN7HGQZWKsIzxnLy8wl-z7V1234';
+    $SUPABASE_SERVICE_KEY = $_ENV['SUPABASE_SERVICE_KEY'] ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51b2l6cnFzbnhvbGR6Y3Z3c3p1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDI1MDA5MCwiZXhwIjoyMDY1ODI2MDkwfQ.Cy3jKTJX0hG-tUj5cRgK3peSxAor0JyBPUlaZJxwnt8';
     $SEGMIND_API_KEY = $_ENV['SEGMIND_API_KEY'] ?? '';
 
     if (empty($SEGMIND_API_KEY)) {
