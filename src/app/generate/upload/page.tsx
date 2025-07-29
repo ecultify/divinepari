@@ -66,16 +66,31 @@ function UploadPhotoPageContent() {
           const userName = localStorage.getItem('userName') || '';
           const userEmail = localStorage.getItem('userEmail') || '';
           
+          console.log('Background job conditions check:', {
+            hasUploadResult: !!uploadResult,
+            uploadResultUrl: uploadResult?.url,
+            userEmail: userEmail,
+            gender: gender,
+            selectedPoster: selectedPoster,
+            sessionId: sessionId
+          });
+          
           if (uploadResult && userEmail && gender && selectedPoster) {
-            await queueBackgroundJob(sessionId, {
-              gender: gender,
-              posterName: selectedPoster,
-              userImageUrl: uploadResult.url,
-              userName: userName,
-              userEmail: userEmail
-            });
-            
-            console.log('Background job queued as backup for session:', sessionId);
+            console.log('All conditions met, queuing background job...');
+            try {
+              await queueBackgroundJob(sessionId, {
+                gender: gender,
+                posterName: selectedPoster,
+                userImageUrl: uploadResult.url,
+                userName: userName,
+                userEmail: userEmail
+              });
+              console.log('Background job queued successfully for session:', sessionId);
+            } catch (error) {
+              console.error('Failed to queue background job:', error);
+            }
+          } else {
+            console.log('Background job NOT queued - missing conditions');
           }
 
           await trackUserStep(sessionId, 'photo_upload', {
