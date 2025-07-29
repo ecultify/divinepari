@@ -46,9 +46,16 @@ function UploadPhotoPageContent() {
   }, [gender, selectedPoster, router]);
 
   const handleFileUpload = async (file: File) => {
+    console.log('=== FILE UPLOAD DEBUG ===');
+    console.log('File uploaded:', file.name, file.type);
+    console.log('Current gender:', gender);
+    console.log('Current selectedPoster:', selectedPoster);
+    console.log('Current sessionId:', sessionId);
+    
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = async (e) => {
+        console.log('File read successfully, starting upload to Supabase...');
         setUploadedImage(e.target?.result as string);
         setShowPreviewModal(true);
         
