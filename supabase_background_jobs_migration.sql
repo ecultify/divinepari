@@ -56,7 +56,7 @@ BEGIN
   SET 
     status = 'processing',
     started_at = TIMEZONE('utc'::TEXT, NOW()),
-    attempts = attempts + 1
+    attempts = background_jobs.attempts + 1
   WHERE id = (
     SELECT bj.id
     FROM background_jobs bj
@@ -67,7 +67,7 @@ BEGIN
     LIMIT 1
     FOR UPDATE SKIP LOCKED
   )
-  RETURNING id, background_jobs.session_id, background_jobs.input_data, background_jobs.attempts;
+  RETURNING background_jobs.id, background_jobs.session_id, background_jobs.input_data, background_jobs.attempts;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -103,10 +103,10 @@ DECLARE
   current_attempts INTEGER;
   max_attempts INTEGER;
 BEGIN
-  SELECT attempts, background_jobs.max_attempts 
+  SELECT bj.attempts, bj.max_attempts 
   INTO current_attempts, max_attempts
-  FROM background_jobs 
-  WHERE id = job_id;
+  FROM background_jobs bj
+  WHERE bj.id = job_id;
   
   IF current_attempts >= max_attempts OR NOT should_retry THEN
     -- Mark as permanently failed
