@@ -404,7 +404,7 @@ function checkIfEmailAlreadySent($sessionId) {
     
     if ($httpCode === 200) {
         $data = json_decode($response, true);
-        if (!empty($data) && ($data[0]['email_sent'] || $data[0]['email_sent_via_background'])) {
+        if (!empty($data) && $data[0]['email_sent_via_background']) {
             return true;
         }
     }
