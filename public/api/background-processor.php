@@ -195,7 +195,27 @@ try {
     // Get next pending job
     debug_log('Getting next pending job...');
     
-    // First, let's check what pending jobs exist
+    // First, reset any stuck "processing" jobs older than 10 minutes
+    $stuckJobs = querySupabaseTable('background_jobs', [
+        'status' => 'eq.processing',
+        'started_at' => 'lt.' . date('Y-m-d\TH:i:s\Z', strtotime('-10 minutes')),
+        'select' => 'id,session_id,started_at'
+    ]);
+    
+    if (!empty($stuckJobs)) {
+        debug_log('Found stuck processing jobs', ['count' => count($stuckJobs)]);
+        foreach ($stuckJobs as $stuckJob) {
+            updateSupabaseTable('background_jobs', [
+                'status' => 'pending',
+                'attempts' => 0,
+                'started_at' => null,
+                'error_message' => 'Reset from stuck processing state'
+            ], ['id' => $stuckJob['id']]);
+            debug_log('Reset stuck job', ['job_id' => $stuckJob['id']]);
+        }
+    }
+    
+    // Check what pending jobs exist
     $pendingJobsCheck = querySupabaseTable('background_jobs', [
         'status' => 'eq.pending',
         'select' => 'id,session_id,status,attempts,max_attempts,next_retry_at,created_at'
