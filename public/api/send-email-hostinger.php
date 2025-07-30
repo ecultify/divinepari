@@ -197,9 +197,9 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
     $downloadButton = '';
     if ($posterUrl) {
         $downloadButton = '
-        <div style="text-align: center; margin: 40px 0;">
-            <a href="' . htmlspecialchars($posterUrl) . '" style="display: inline-block; background: linear-gradient(135deg, #F8FF13 0%, #E6E600 100%); color: #000; padding: 18px 40px; text-decoration: none; border-radius: 50px; font-family: \'Pari-Match\', Arial, sans-serif; font-weight: bold; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 8px 25px rgba(248, 255, 19, 0.3); transition: all 0.3s ease; border: 3px solid #F8FF13;">
-                📥 DOWNLOAD YOUR POSTER
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="' . htmlspecialchars($posterUrl) . '" style="display: inline-block; background: #FFFF00; color: #000; padding: 18px 40px; text-decoration: none; border-radius: 50px; font-family: \'TT Firs Neue\', Arial, sans-serif; font-weight: bold; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 8px 25px rgba(255, 255, 0, 0.3); transition: all 0.3s ease; border: 3px solid #FFFF00;">
+                Download Your Poster Now
             </a>
         </div>';
     }
@@ -212,6 +212,7 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Your Divine Poster is Ready!</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.cdnfonts.com/css/tt-firs-neue" rel="stylesheet">
         <style>
             @font-face {
                 font-family: "Pari-Match";
@@ -227,81 +228,116 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
             .glow-text {
                 text-shadow: 0 0 20px rgba(248, 255, 19, 0.5);
             }
+            .step-number {
+                display: inline-block;
+                width: 32px;
+                height: 32px;
+                border: 2px solid #FFFF00;
+                background: transparent;
+                color: #FFFF00;
+                border-radius: 50%;
+                text-align: center;
+                line-height: 28px;
+                font-size: 14px;
+                font-weight: bold;
+                margin-right: 15px;
+                font-family: "Inter", sans-serif;
+                vertical-align: top;
+                margin-top: 2px;
+            }
         </style>
     </head>
-    <body style="font-family: \"Inter\", Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); min-height: 100vh;">
-        <div style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); padding: 0; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); overflow: hidden; border: 1px solid #e9ecef;">
-            
-            <!-- Header Section with Brand Colors -->
-            <div style="background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #F8FF13 100%); padding: 40px 30px; text-align: center; position: relative;">
-                <div style="position: relative; z-index: 2;">
-                    <h1 class="parimatch-font" style="color: #FFFFFF; font-size: 32px; font-weight: 800; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
-                        🎤 Your Divine Poster is Ready! ✨
-                    </h1>
-                    <p style="color: #F8FF13; font-size: 18px; font-weight: 600; margin: 0; text-transform: uppercase; letter-spacing: 1px;">
-                        Time to shine with DIVINE x Parimatch!
-                    </p>
-                </div>
-            </div>
-            
-            <!-- Main Content -->
-            <div style="padding: 40px 30px;">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <p style="font-size: 20px; font-weight: 600; color: #2c3e50; margin: 0 0 10px 0;">
-                        Hey <span style="display: inline-block; background: linear-gradient(135deg, #F8FF13, #E6E600); color: #000000; padding: 2px 12px; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">' . htmlspecialchars($userName) . '</span>! 👋
-                    </p>
+    <body style="font-family: \"Inter\", Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
+        <div style="background-image: url(\'https://posewithdivine.com/images/email/BG_pic.png\'); background-size: cover; background-position: center; background-repeat: no-repeat; min-height: 100vh; padding: 40px 20px; display: flex; align-items: center; justify-content: center;">
+            <div style="max-width: 500px; width: 100%; background: rgba(255, 255, 255, 0.95); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2);">
+                
+                <!-- Header Section -->
+                <div style="text-align: center; padding: 40px 30px 30px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);">
+                    <img src="https://posewithdivine.com/images/landing/normalimages/timetoshine.png" alt="Time to Shine" style="max-width: 200px; height: auto; margin-bottom: 20px;">
                 </div>
                 
-                <div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); padding: 25px; border-radius: 15px; border-left: 5px solid #F8FF13; margin: 25px 0; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
-                    <p style="font-size: 16px; margin: 0 0 15px 0; color: #2c3e50; line-height: 1.8;">
-                        Your epic poster featuring you and India\'s rap king <strong style="color: #000; background: linear-gradient(135deg, #F8FF13, #E6E600); padding: 2px 8px; border-radius: 4px;">DIVINE</strong> is ready to download! 🔥
-                    </p>
-                    
-                    ' . $downloadButton . '
-                    
-                    <div style="background: linear-gradient(135deg, #F8FF13 0%, #E6E600 100%); padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center;">
-                        <p style="color: #000; font-weight: 700; font-size: 16px; margin: 0; text-transform: uppercase; letter-spacing: 1px;">
-                            🌟 This is your moment to shine! 🌟
+                <!-- Main Content -->
+                <div style="padding: 40px 30px; background: #ffffff;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <p style="font-size: 24px; font-weight: 700; color: #2c2c2c; margin: 0 0 10px 0; font-family: \'Montserrat\', sans-serif;">
+                            Namaste, <span style="display: inline-block; background: linear-gradient(135deg, #F8FF13, #E6E600); color: #000000; padding: 2px 12px; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">' . htmlspecialchars($userName) . '</span>
                         </p>
                     </div>
                     
-                    <p style="font-size: 16px; margin: 15px 0 0 0; color: #2c3e50; line-height: 1.8; text-align: center;">
-                        Share your poster and let the world see your <strong>DIVINE</strong> collaboration! 🎤
-                    </p>
+                    <div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); padding: 25px; border-radius: 15px; border-left: 5px solid #F8FF13; margin: 25px 0; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                        <p style="font-size: 18px; margin: 0 0 15px 0; color: #2c3e50; line-height: 1.8; text-align: center;">
+                            Your custom poster with <strong style="color: #000; background: linear-gradient(135deg, #F8FF13, #E6E600); padding: 2px 8px; border-radius: 4px;">DIVINE</strong> is ready — and yeah, it\'s fire 🔥
+                        </p>
+                        
+                        <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 25px; border-radius: 15px; margin: 25px 0; border-left: 5px solid #F8FF13; text-align: center;">
+                            <p style="font-size: 16px; color: #2c2c2c; margin-bottom: 20px; line-height: 1.6;">
+                                Download the high-quality PDF 📄 — perfect for saving, printing, or showing off 📸
+                            </p>
+                            
+                            ' . $downloadButton . '
+                        </div>
+                    </div>
+                    
+                    <!-- Social Sharing Section -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin: 25px 0;">
+                        <h3 style="color: #F8FF13; margin: 0 0 15px 0; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Go one step further:</h3>
+                        <ul style="list-style: none; padding: 0; margin: 0; text-align: left;">
+                            <li style="background: rgba(255, 255, 255, 0.1); margin: 8px 0; padding: 12px 15px; border-radius: 8px; border-left: 3px solid #F8FF13; font-weight: 500; font-size: 14px; font-family: Arial, sans-serif;">
+                                <span class="step-number">01</span>
+                                1. Share your poster<br>on Instagram
+                            </li>
+                            <li style="background: rgba(255, 255, 255, 0.1); margin: 8px 0; padding: 12px 15px; border-radius: 8px; border-left: 3px solid #F8FF13; font-weight: 500; font-size: 14px; font-family: Arial, sans-serif;">
+                                <span class="step-number">02</span>
+                                2. Tag <span style="color: #FFFF00; font-weight: bold;">@playwithparimatch</span> and use<br><span style="color: #FFFF00; font-weight: bold;">#DIVINExPARIMATCH</span>
+                            </li>
+                            <li style="background: rgba(255, 255, 255, 0.1); margin: 8px 0; padding: 12px 15px; border-radius: 8px; border-left: 3px solid #F8FF13; font-weight: 500; font-size: 14px; font-family: Arial, sans-serif;">
+                                <span class="step-number">03</span>
+                                3. Get a chance to win a limited-edition merch from DIVINE x Parimatch! 🧢👕
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Slot Game Section -->
+                    <div style="background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%); color: white; padding: 25px; border-radius: 15px; margin: 25px 0; text-align: center; border: 2px solid #F8FF13;">
+                        <h3 style="color: #F8FF13; margin: 0 0 15px 0; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">DIVINE Spin City</h3>
+                        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 15px;">
+                            Now bring that same energy into DIVINE Spin City, Parimatch\'s brand-new slot game made for champions like You!
+                        </p>
+                        <div style="background: linear-gradient(135deg, #F8FF13 0%, #E6E600 100%); color: #000000; padding: 10px 20px; border-radius: 25px; font-weight: 700; font-size: 16px; display: inline-block; margin: 10px 0; text-transform: uppercase; letter-spacing: 1px;">
+                            Use code <span style="color: #FFFF00; font-weight: bold;">PM-DIVINE</span> to unlock your <span style="color: #FFFF00; font-weight: bold;">30 Free Spins</span> and get started 🎁
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <a href="https://parimatchglobal.com/en/casino/slots/game/parimatch-games-divine-spin-city" style="display: inline-block; background: #FFFF00; color: #000; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-family: \'TT Firs Neue\', sans-serif;">
+                                Play Now
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 25px 0; font-size: 18px; font-weight: 700; color: #2c2c2c; font-family: \'Montserrat\', sans-serif;">
+                        This is your time to flex, Bro. Let\'s play! 🚀
+                    </div>
                 </div>
                 
-                <!-- Social Sharing Section -->
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin: 25px 0;">
-                    <h3 style="color: #fff; margin: 0 0 15px 0; font-size: 18px; font-weight: 700;">🏆 Share & Win!</h3>
-                    <p style="margin: 0; font-size: 14px; line-height: 1.6;">
-                        Tag <strong>@playwithparimatch</strong> and use <strong>#DIVINExParimatch</strong><br>
-                        for a chance to win exclusive merchandise! 🎁
-                    </p>
-                </div>
-            </div>
-            
-            <!-- Footer -->
-            <div style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: #ecf0f1; text-align: center; padding: 30px; border-top: 3px solid #F8FF13;">
-                <div class="parimatch-font" style="margin-bottom: 15px;">
-                    <p style="font-size: 18px; font-weight: 700; margin: 0 0 5px 0; color: #F8FF13; text-transform: uppercase; letter-spacing: 1px;">
-                        DIVINE × PARIMATCH
-                    </p>
-                    <p style="font-size: 14px; margin: 0; color: #bdc3c7; font-weight: 500;">
-                        Time to Shine Campaign 2024
-                    </p>
-                </div>
-                
-                <div style="border-top: 1px solid #34495e; padding-top: 15px; margin-top: 15px;">
-                    <p style="font-size: 12px; margin: 0; color: #95a5a6; line-height: 1.4;">
-                        Sent from <strong style="color: #F8FF13;">support@posewithdivine.com</strong><br>
-                        🎤 Keep shining! ✨
-                    </p>
+                <!-- Footer -->
+                <div style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: #ecf0f1; text-align: center; padding: 30px; border-top: 3px solid #F8FF13;">
+                    <div style="margin-bottom: 15px;">
+                        <p style="font-size: 14px; margin: 0; color: #bdc3c7; font-weight: 500;">
+                            This email was sent because you created a poster on our platform.
+                        </p>
+                        <p style="font-size: 14px; margin: 5px 0; color: #bdc3c7; font-weight: 500;">
+                            Session: ' . htmlspecialchars($sessionId) . '
+                        </p>
+                    </div>
+                    
+                    <div style="border-top: 1px solid #34495e; padding-top: 15px; margin-top: 15px;">
+                        <p style="font-size: 12px; margin: 0; color: #95a5a6; line-height: 1.4;">
+                            © 2024 Divine x Parimatch. All rights reserved.<br>
+                            Visit us at posewithdivine.com
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Background Pattern -->
-        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(circle at 25% 25%, #F8FF13 0%, transparent 50%), radial-gradient(circle at 75% 75%, #E6E600 0%, transparent 50%); opacity: 0.1; pointer-events: none; z-index: -1;"></div>
     </body>
     </html>';
 }
@@ -311,28 +347,38 @@ function generateEmailText($userName, $posterUrl, $sessionId) {
     
     return "🎤✨ YOUR DIVINE POSTER IS READY! ✨🎤
 
-Hey " . $userName . "! 👋
+Namaste, " . $userName . "
 
 ═══════════════════════════════════════
 
-🔥 Your epic poster featuring you and India's rap king DIVINE is ready to download! 🔥" . $downloadText . "
+Your custom poster with DIVINE is ready — and yeah, it's fire 🔥" . $downloadText . "
 
-🌟 THIS IS YOUR MOMENT TO SHINE! 🌟
-
-Share your poster and let the world see your DIVINE collaboration! 🎤
+Download the high-quality PDF 📄 — perfect for saving, printing, or showing off 📸
 
 ═══════════════════════════════════════
 
-🏆 SHARE & WIN! 🏆
-Tag @playwithparimatch and use #DIVINExParimatch
-for a chance to win exclusive merchandise! 🎁
+GO ONE STEP FURTHER:
+1. Share your poster on Instagram
+2. Tag @playwithparimatch and use #DIVINExParimatch
+3. Get a chance to win a limited-edition merch from DIVINE x Parimatch! 🧢👕
 
 ═══════════════════════════════════════
 
-DIVINE × PARIMATCH
-Time to Shine Campaign 2024
+DIVINE SPIN CITY
+Now bring that same energy into DIVINE Spin City, Parimatch's brand-new slot game made for champions like You!
 
-Sent from support@posewithdivine.com
-🎤 Keep shining! ✨";
+Use code PM-DIVINE to unlock your 30 Free Spins and get started 🎁
+
+═══════════════════════════════════════
+
+This is your time to flex, Bro. Let's play! 🚀
+
+═══════════════════════════════════════
+
+This email was sent because you created a poster on our platform.
+Session: " . $sessionId . "
+
+© 2024 Divine x Parimatch. All rights reserved.
+Visit us at posewithdivine.com";
 }
 ?> 
