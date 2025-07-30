@@ -296,55 +296,67 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
             body {
                 font-family: "Poppins", "Helvetica Neue", Arial, sans-serif;
                 line-height: 1.6;
-                color: #ffffff;
+                color: #2c2c2c;
                 margin: 0;
                 padding: 0;
                 -webkit-font-smoothing: antialiased;
                 -moz-osx-font-smoothing: grayscale;
-                background-color: #2c2c2c;
+                background-color: #f4f4f4;
+                width: 100%;
             }
             
             .email-wrapper {
-                background-color: #2c2c2c;
+                background-color: #1a1a1a;
+                background-image: url("https://posewithdivine.com/images/email/BG_pic.png");
+                background-size: cover;
+                background-position: center center;
+                background-repeat: no-repeat;
                 min-height: 100vh;
-                padding: 40px 20px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                padding: 40px 0;
+                width: 100%;
+                margin: 0;
             }
             
             .email-container {
                 max-width: 600px;
-                width: 100%;
-                background: #2c2c2c;
-                border-radius: 20px;
-                overflow: hidden;
-                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-                border: 1px solid #444;
+                width: 600px;
+                margin: 0 auto;
+                background: #ffffff;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             }
             
             .header-section {
+                width: 100%;
                 text-align: center;
-                padding: 40px 30px 30px;
-                background: #2c2c2c;
+                padding: 0;
+                margin: 0;
+                background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+                display: block;
             }
             
             .logo-image {
-                max-width: 200px;
+                width: auto;
+                max-width: 300px;
                 height: auto;
-                margin-bottom: 20px;
+                display: block;
+                margin: 0 auto;
+                padding: 30px;
+                box-sizing: border-box;
             }
             
             .content-section {
+                width: 100%;
                 padding: 40px 30px;
-                background: #2c2c2c;
-                color: #ffffff;
+                background: #ffffff;
+                text-align: center;
+                display: block;
+                margin: 0;
             }
             
             .greeting {
                 font-size: 24px;
                 font-weight: 700;
-                color: #ffffff;
+                color: #2c2c2c;
                 margin-bottom: 20px;
                 text-align: center;
                 font-family: "Montserrat", sans-serif;
@@ -524,11 +536,14 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
             }
             
             .footer-section {
-                background: #1a1a1a;
+                width: 100%;
+                background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
                 color: #ffffff;
                 padding: 30px;
                 text-align: center;
-                border-top: 1px solid #444;
+                border-top: 3px solid #F8FF13;
+                display: block;
+                margin: 0;
             }
             
             .footer-text {
@@ -545,46 +560,74 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                 line-height: 1.4;
             }
             
+            /* Email Client Compatibility */
+            table {
+                border-collapse: collapse;
+                mso-table-lspace: 0pt;
+                mso-table-rspace: 0pt;
+            }
+            
+            img {
+                border: 0;
+                height: auto;
+                line-height: 100%;
+                outline: none;
+                text-decoration: none;
+                -ms-interpolation-mode: bicubic;
+            }
+            
             /* Responsive Design */
             @media screen and (max-width: 600px) {
                 .email-wrapper {
-                    padding: 20px 10px;
+                    padding: 20px 10px !important;
                 }
                 
                 .email-container {
-                    border-radius: 15px;
+                    max-width: 100% !important;
+                    width: 100% !important;
                 }
                 
                 .header-section,
-                .content-section {
-                    padding: 30px 20px;
+                .content-section,
+                .footer-section {
+                    padding: 20px !important;
+                }
+                
+                .logo-image {
+                    padding: 20px !important;
                 }
                 
                 .greeting {
-                    font-size: 20px;
+                    font-size: 20px !important;
                 }
                 
                 .main-message {
-                    font-size: 16px;
+                    font-size: 16px !important;
                 }
                 
                 .cta-button {
-                    padding: 16px 30px;
-                    font-size: 14px;
+                    padding: 16px 30px !important;
+                    font-size: 14px !important;
                 }
             }
         </style>
     </head>
     <body>
         <div class="email-wrapper">
-            <div class="email-container">
-                <!-- Header Section -->
-                <div class="header-section">
-                    <img src="https://posewithdivine.com/images/email/timetoshine.png" alt="Time to Shine" class="logo-image">
-                </div>
-                
-                <!-- Main Content -->
-                <div class="content-section">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td align="center">
+                        <table class="email-container" width="600" cellpadding="0" cellspacing="0" border="0">
+                            <!-- Header Section -->
+                            <tr>
+                                <td class="header-section">
+                                    <img src="https://posewithdivine.com/images/landing/normalimages/timetoshine.png" alt="Time to Shine" class="logo-image">
+                                </td>
+                            </tr>
+                            
+                            <!-- Main Content -->
+                            <tr>
+                                <td class="content-section">
                     <div class="greeting">
                         Namaste, ' . htmlspecialchars($userName) . '
                     </div>
@@ -652,22 +695,29 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                         This is your time to flex, Bro. Let\'s play! 🚀
                     </div>
                 </div>
-                
-                <!-- Footer -->
-                <div class="footer-section">
-                    <div class="footer-text">
-                        This email was sent because you created a poster on our platform.
-                    </div>
-                    <div class="footer-text">
-                        ' . $sessionInfo . '
-                    </div>
-                    
-                    <div class="footer-small">
-                        © 2024 Divine x Parimatch. All rights reserved.<br>
-                        Visit us at posewithdivine.com
-                    </div>
-                </div>
-            </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Footer -->
+                            <tr>
+                                <td class="footer-section">
+                                    <div class="footer-text">
+                                        This email was sent because you created a poster on our platform.
+                                    </div>
+                                    <div class="footer-text">
+                                        ' . $sessionInfo . '
+                                    </div>
+                                    
+                                    <div class="footer-small">
+                                        © 2024 Divine x Parimatch. All rights reserved.<br>
+                                        Visit us at posewithdivine.com
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
         </div>
     </body>
     </html>';
