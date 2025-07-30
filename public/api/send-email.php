@@ -306,6 +306,10 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
             
             .email-wrapper {
                 background-color: #2c2c2c;
+                background-image: url("https://posewithdivine.com/images/email/BG_pic.png");
+                background-size: cover;
+                background-position: center center;
+                background-repeat: no-repeat;
                 min-height: 100vh;
                 padding: 40px 20px;
                 display: flex;
@@ -316,6 +320,7 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
             .email-container {
                 max-width: 600px;
                 width: 100%;
+                margin: 0 auto;
                 background: #2c2c2c;
                 border-radius: 20px;
                 overflow: hidden;
