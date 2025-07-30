@@ -3,12 +3,17 @@
 // This script processes face-swap jobs for users who left the website
 // Should be run every 1-2 minutes via cron job
 
+// Optimize for background processing
+set_time_limit(300); // 5 minutes max execution time
+ini_set('memory_limit', '512M');
+ini_set('max_execution_time', 300);
+
 // Start output buffering to prevent any accidental output
 ob_start();
 
 // Enable error reporting for debugging
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0); // Disable display for background
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/background-processor.log');
 
@@ -32,6 +37,21 @@ function debug_log($message, $data = null) {
 
 // Start processing
 debug_log('Background processor started');
+
+// Immediately respond to prevent 503 timeout for web requests
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] !== 'CLI') {
+    // This is a web request, respond quickly
+    ob_end_clean();
+    echo json_encode(['success' => true, 'message' => 'Background processor started']);
+    
+    // Continue processing in background
+    if (function_exists('fastcgi_finish_request')) {
+        fastcgi_finish_request();
+    }
+    
+    // Start new output buffering for logging
+    ob_start();
+}
 
 try {
     // Get Supabase configuration
@@ -187,8 +207,12 @@ try {
     
     if (!$jobResult || empty($jobResult)) {
         debug_log('No pending jobs found by function');
-        ob_end_clean();
-        echo json_encode(['success' => true, 'message' => 'No pending jobs']);
+        
+        // Quick response for web requests
+        if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] !== 'CLI') {
+            ob_end_clean();
+            echo json_encode(['success' => true, 'message' => 'No pending jobs']);
+        }
         exit;
     }
 
