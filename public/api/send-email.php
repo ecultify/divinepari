@@ -121,15 +121,12 @@ try {
     
     // For PHP on Windows/Hostinger, we might need to use additional configuration
     if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN' || !empty($_ENV['HOSTINGER_SMTP_HOST'])) {
-        // Use direct SMTP connection with authentication for Hostinger
-        $emailSent = sendViaDirectSMTP($to, $subject, $emailHTML, $FROM_EMAIL, $FROM_NAME, $SMTP_HOST, $SMTP_PORT, $SMTP_USERNAME, $SMTP_PASSWORD);
+        // Try to use PHP's built-in mail() function with proper SMTP settings
+        $mailSent = mail($to, $subject, $emailHTML, $headers);
         
-        if (!$emailSent) {
-            // If direct SMTP fails, try mail() as fallback
-            $mailSent = mail($to, $subject, $emailHTML, $headers);
-            if (!$mailSent) {
-                throw new Exception('Both SMTP and mail() function failed');
-            }
+        if (!$mailSent) {
+            // If mail() fails, try alternative SMTP method
+            throw new Exception('PHP mail() function failed, trying alternative method...');
         }
     } else {
         // For other servers, try direct SMTP connection
@@ -148,7 +145,7 @@ try {
             'from_email' => $FROM_EMAIL,
             'smtp_host' => $SMTP_HOST,
             'smtp_port' => $SMTP_PORT,
-            'method' => 'Direct SMTP with authentication'
+            'method' => 'PHP mail() with SMTP'
         ]
     ]);
     
@@ -179,18 +176,11 @@ try {
 
 // Function to send email via direct SMTP connection (alternative method)
 function sendViaDirectSMTP($to, $subject, $message, $fromEmail, $fromName, $smtpHost, $smtpPort, $username, $password) {
-    // Better SMTP implementation with SSL/TLS support
+    // This is a simplified SMTP implementation
+    // For production, consider using PHPMailer or similar library
     
     try {
-        // Create context for SSL if needed
-        $context = stream_context_create();
-        
-        // For port 465 (SSL), use ssl:// prefix
-        if ($smtpPort == 465) {
-            $smtpHost = "ssl://" . $smtpHost;
-        }
-        
-        $socket = stream_socket_client("$smtpHost:$smtpPort", $errno, $errstr, 30, STREAM_CLIENT_CONNECT, $context);
+        $socket = fsockopen($smtpHost, $smtpPort, $errno, $errstr, 30);
         
         if (!$socket) {
             throw new Exception("Cannot connect to SMTP server: $errstr ($errno)");
@@ -198,98 +188,67 @@ function sendViaDirectSMTP($to, $subject, $message, $fromEmail, $fromName, $smtp
         
         // Read server greeting
         $response = fgets($socket, 256);
-        error_log("SMTP: Server greeting: " . trim($response));
         
         // Send EHLO
-        fputs($socket, "EHLO " . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "\r\n");
+        fputs($socket, "EHLO " . $_SERVER['HTTP_HOST'] . "\r\n");
         $response = fgets($socket, 256);
-        error_log("SMTP: EHLO response: " . trim($response));
         
         // Start TLS if using port 587
         if ($smtpPort == 587) {
             fputs($socket, "STARTTLS\r\n");
             $response = fgets($socket, 256);
-            error_log("SMTP: STARTTLS response: " . trim($response));
             
             // Enable crypto
             stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
             
             // Send EHLO again after TLS
-            fputs($socket, "EHLO " . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "\r\n");
+            fputs($socket, "EHLO " . $_SERVER['HTTP_HOST'] . "\r\n");
             $response = fgets($socket, 256);
-            error_log("SMTP: EHLO after TLS response: " . trim($response));
         }
         
         // AUTH LOGIN
         fputs($socket, "AUTH LOGIN\r\n");
         $response = fgets($socket, 256);
-        error_log("SMTP: AUTH LOGIN response: " . trim($response));
-        
-        if (strpos($response, '334') === false) {
-            throw new Exception('SMTP server does not support AUTH LOGIN');
-        }
         
         fputs($socket, base64_encode($username) . "\r\n");
         $response = fgets($socket, 256);
-        error_log("SMTP: Username response: " . trim($response));
         
         fputs($socket, base64_encode($password) . "\r\n");
         $response = fgets($socket, 256);
-        error_log("SMTP: Password response: " . trim($response));
         
         if (strpos($response, '235') === false) {
-            throw new Exception('SMTP authentication failed: ' . trim($response));
+            throw new Exception('SMTP authentication failed');
         }
         
         // Send email
         fputs($socket, "MAIL FROM: <$fromEmail>\r\n");
         $response = fgets($socket, 256);
-        error_log("SMTP: MAIL FROM response: " . trim($response));
-        
-        if (strpos($response, '250') === false) {
-            throw new Exception('MAIL FROM failed: ' . trim($response));
-        }
         
         fputs($socket, "RCPT TO: <$to>\r\n");
         $response = fgets($socket, 256);
-        error_log("SMTP: RCPT TO response: " . trim($response));
-        
-        if (strpos($response, '250') === false) {
-            throw new Exception('RCPT TO failed: ' . trim($response));
-        }
         
         fputs($socket, "DATA\r\n");
         $response = fgets($socket, 256);
-        error_log("SMTP: DATA response: " . trim($response));
-        
-        if (strpos($response, '354') === false) {
-            throw new Exception('DATA command failed: ' . trim($response));
-        }
         
         $emailContent = "From: $fromName <$fromEmail>\r\n";
         $emailContent .= "To: $to\r\n";
         $emailContent .= "Subject: $subject\r\n";
         $emailContent .= "MIME-Version: 1.0\r\n";
         $emailContent .= "Content-Type: text/html; charset=UTF-8\r\n";
-        $emailContent .= "Date: " . date('r') . "\r\n";
         $emailContent .= "\r\n";
         $emailContent .= $message;
         $emailContent .= "\r\n.\r\n";
         
         fputs($socket, $emailContent);
         $response = fgets($socket, 256);
-        error_log("SMTP: Message sent response: " . trim($response));
         
         fputs($socket, "QUIT\r\n");
-        $response = fgets($socket, 256);
-        error_log("SMTP: QUIT response: " . trim($response));
-        
         fclose($socket);
         
         return strpos($response, '250') !== false;
         
     } catch (Exception $e) {
-        error_log("SMTP error: " . $e->getMessage());
+        error_log("Direct SMTP error: " . $e->getMessage());
         return false;
     }
 }
