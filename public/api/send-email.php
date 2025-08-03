@@ -321,7 +321,7 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                 max-width: 600px;
                 width: 100%;
                 margin: 0 auto;
-                background: #2c2c2c;
+                background: #000000;
                 border-radius: 20px;
                 overflow: hidden;
                 box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -338,19 +338,19 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
             }
             
             .logo-image {
-                width: auto;
-                max-width: 300px;
+                width: 100%;
+                max-width: 100%;
                 height: auto;
                 display: block;
-                margin: 0 auto;
-                padding: 30px;
+                margin: 0;
+                padding: 0;
                 box-sizing: border-box;
             }
             
             .content-section {
                 width: 100%;
                 padding: 40px 30px;
-                background: #ffffff;
+                background: #000000;
                 text-align: center;
                 display: block;
                 margin: 0;
@@ -624,7 +624,7 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                             <!-- Header Section -->
                             <tr>
                                 <td class="header-section">
-                                    <img src="https://posewithdivine.com/images/landing/normalimages/timetoshine.png" alt="Time to Shine" class="logo-image">
+                                    <img src="https://posewithdivine.com/images/email/timetoshine.png" alt="Time to Shine" class="logo-image">
                                 </td>
                             </tr>
                             
