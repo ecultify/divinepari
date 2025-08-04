@@ -36,7 +36,7 @@ function PosterSelectionPageContent() {
   }, [gender, router]);
 
   const posters = gender === 'male' 
-    ? ['Option1M.avif', 'Option2M.avif', 'Option3M.avif']
+    ? ['Option1M.avif', 'Option2M.avif', 'Option3M.webp']
     : ['Option1F.avif', 'Option2F.avif', 'Option3F.avif'];
 
   const handlePosterSelect = async (poster: string) => {
