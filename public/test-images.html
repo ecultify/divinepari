@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #222; color: white; }
+        .image-test { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        img { max-width: 200px; margin: 10px; border: 2px solid #f8ff13; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Image Loading Test</h1>
+    
+    <div class="image-test">
+        <h2>Male Options (What should show when gender=male)</h2>
+        <h3>Option 1 (Should be first): Option1M.avif</h3>
+        <img src="/images/posters/Option1M.avif" alt="Option1M" 
+             onload="console.log('Option1M.avif loaded successfully'); document.getElementById('option1m-status').innerHTML = 'SUCCESS'"
+             onerror="console.log('Option1M.avif failed to load'); document.getElementById('option1m-status').innerHTML = 'FAILED'">
+        <span id="option1m-status" class="error">Loading...</span>
+        
+        <h3>Option 2: Option2M.avif</h3>
+        <img src="/images/posters/Option2M.avif" alt="Option2M"
+             onload="console.log('Option2M.avif loaded successfully'); document.getElementById('option2m-status').innerHTML = 'SUCCESS'"
+             onerror="console.log('Option2M.avif failed to load'); document.getElementById('option2m-status').innerHTML = 'FAILED'">
+        <span id="option2m-status" class="error">Loading...</span>
+        
+        <h3>Option 3: Option3M.webp</h3>
+        <img src="/images/posters/Option3M.webp" alt="Option3M"
+             onload="console.log('Option3M.webp loaded successfully'); document.getElementById('option3m-status').innerHTML = 'SUCCESS'"
+             onerror="console.log('Option3M.webp failed to load'); document.getElementById('option3m-status').innerHTML = 'FAILED'">
+        <span id="option3m-status" class="error">Loading...</span>
+    </div>
+
+    <div class="image-test">
+        <h2>Array Test</h2>
+        <p>Let's test the exact array that the React component should use:</p>
+        <div id="array-test"></div>
+    </div>
+
+    <script>
+        // Test the exact same logic as the React component
+        const gender = 'male';
+        const posters = gender === 'male' 
+            ? ['Option1M.avif', 'Option2M.avif', 'Option3M.webp']
+            : ['Option1F.avif', 'Option2F.avif', 'Option3F.avif'];
+        
+        console.log('Gender:', gender);
+        console.log('Posters array:', posters);
+        console.log('First poster should be:', gender === 'male' ? 'Option1M.avif' : 'Option1F.avif');
+        
+        const arrayTestDiv = document.getElementById('array-test');
+        let html = '<h3>Posters Array (gender = "male"):</h3><ul>';
+        posters.forEach((poster, index) => {
+            html += `<li>Index ${index}: ${poster}</li>`;
+        });
+        html += '</ul>';
+        arrayTestDiv.innerHTML = html;
+    </script>
+</body>
+</html>

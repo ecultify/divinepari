@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AVIF Browser Support Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #222; color: white; }
+        .test-result { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        img { max-width: 200px; margin: 10px; border: 2px solid #f8ff13; }
+    </style>
+</head>
+<body>
+    <h1>AVIF Browser Support Test</h1>
+    
+    <div class="test-result">
+        <h2>Canvas AVIF Support Check:</h2>
+        <div id="canvas-test"></div>
+    </div>
+    
+    <div class="test-result">
+        <h2>Image Loading Test - Option1M.avif:</h2>
+        <img id="test-img" src="/images/posters/Option1M.avif" alt="Option1M.avif test">
+        <div id="img-result">Loading...</div>
+    </div>
+    
+    <div class="test-result">
+        <h2>Image Loading Test - Option3M.webp:</h2>
+        <img id="test-img-webp" src="/images/posters/Option3M.webp" alt="Option3M.webp test">
+        <div id="img-result-webp">Loading...</div>
+    </div>
+    
+    <div class="test-result">
+        <h2>Browser Info:</h2>
+        <div id="browser-info"></div>
+    </div>
+
+    <script>
+        // Test 1: Canvas AVIF support
+        function testCanvasAVIF() {
+            try {
+                const canvas = document.createElement('canvas');
+                const dataURL = canvas.toDataURL('image/avif');
+                const supported = dataURL.indexOf('data:image/avif') === 0;
+                document.getElementById('canvas-test').innerHTML = supported ? 
+                    '<span class="success">✓ AVIF format supported by canvas</span>' : 
+                    '<span class="error">✗ AVIF format NOT supported by canvas</span>';
+                return supported;
+            } catch (e) {
+                document.getElementById('canvas-test').innerHTML = '<span class="error">✗ Error testing AVIF: ' + e.message + '</span>';
+                return false;
+            }
+        }
+        
+        // Test 2: Direct image loading
+        const img = document.getElementById('test-img');
+        img.onload = function() {
+            document.getElementById('img-result').innerHTML = '<span class="success">✓ Option1M.avif loaded successfully</span>';
+        };
+        img.onerror = function() {
+            document.getElementById('img-result').innerHTML = '<span class="error">✗ Option1M.avif failed to load</span>';
+        };
+        
+        // Test 3: WebP loading (for comparison)
+        const imgWebp = document.getElementById('test-img-webp');
+        imgWebp.onload = function() {
+            document.getElementById('img-result-webp').innerHTML = '<span class="success">✓ Option3M.webp loaded successfully</span>';
+        };
+        imgWebp.onerror = function() {
+            document.getElementById('img-result-webp').innerHTML = '<span class="error">✗ Option3M.webp failed to load</span>';
+        };
+        
+        // Browser info
+        document.getElementById('browser-info').innerHTML = `
+            <strong>User Agent:</strong> ${navigator.userAgent}<br>
+            <strong>Browser:</strong> ${navigator.appName}<br>
+            <strong>Platform:</strong> ${navigator.platform}<br>
+        `;
+        
+        // Run canvas test
+        testCanvasAVIF();
+        
+        console.log('AVIF Support Tests:', {
+            canvasSupport: testCanvasAVIF(),
+            userAgent: navigator.userAgent
+        });
+    </script>
+</body>
+</html>
