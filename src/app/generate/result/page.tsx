@@ -26,19 +26,36 @@ function ResultPageContent() {
       const userEmail = localStorage.getItem('userEmail');
       const userName = localStorage.getItem('userName');
       
+      console.log('EMAIL DEBUG: Starting sendEmailNotification', {
+        sessionId,
+        posterUrl: posterUrl ? posterUrl.substring(0, 50) + '...' : 'NO_URL',
+        userEmail: userEmail ? userEmail : 'NO_EMAIL',
+        userName: userName ? userName : 'NO_NAME'
+      });
+      
       if (!userEmail) {
-        console.log('No email found in localStorage, skipping email notification');
+        console.log('EMAIL DEBUG: No email found in localStorage, skipping email notification');
+        console.log('localStorage contents:', {
+          userEmail: localStorage.getItem('userEmail'),
+          userName: localStorage.getItem('userName'),
+          sessionId: localStorage.getItem('sessionId')
+        });
+        return;
+      }
+
+      if (!posterUrl) {
+        console.log('EMAIL DEBUG: No poster URL provided, skipping email notification');
         return;
       }
 
       // Check if email was already sent to avoid duplicates
       const emailAlreadySent = await checkIfEmailAlreadySent(sessionId);
       if (emailAlreadySent) {
-        console.log('Email already sent for this session, skipping duplicate');
+        console.log('EMAIL DEBUG: Email already sent for this session, skipping duplicate');
         return;
       }
 
-      console.log('Sending email notification to:', userEmail);
+      console.log('EMAIL DEBUG: Proceeding with email send to:', userEmail);
       
       // Use Hostinger SMTP endpoint for reliable email delivery
       // This uses your domain email (support@posewithdivine.com) via SMTP
@@ -57,8 +74,14 @@ function ResultPageContent() {
 
       const result = await response.json();
       
+      console.log('EMAIL DEBUG: Response received', {
+        status: response.status,
+        success: result.success,
+        result: result
+      });
+      
       if (result.success) {
-        console.log('Email sent successfully');
+        console.log('EMAIL DEBUG: Email sent successfully to', userEmail);
         // Update generation result to mark email as sent
         await updateGenerationResult(sessionId, {
           user_email: userEmail,
@@ -66,10 +89,15 @@ function ResultPageContent() {
           email_sent: true
         });
       } else {
-        console.error('Email sending failed:', result.error);
+        console.error('EMAIL DEBUG: Email sending failed:', result.error);
+        console.error('EMAIL DEBUG: Full error response:', result);
       }
     } catch (error) {
-      console.error('Error sending email notification:', error);
+      console.error('EMAIL DEBUG: Exception during email notification:', error);
+      console.error('EMAIL DEBUG: Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
     }
   };
 
