@@ -38,6 +38,9 @@ function PosterSelectionPageContent() {
   const posters = gender === 'male' 
     ? ['Option1M.avif', 'Option2M.avif', 'Option3M.webp']
     : ['Option1F.avif', 'Option2F.avif', 'Option3F.avif'];
+  
+  // Ensure unique poster keys to prevent caching issues
+  const posterKeys = posters.map((poster, index) => `${gender}-${index}-${poster}`);
 
   const handlePosterSelect = async (poster: string) => {
     setSelectedPoster(poster);
@@ -163,7 +166,7 @@ function PosterSelectionPageContent() {
               <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6 mb-8">
                 {posters.map((poster, index) => (
                   <button
-                    key={poster}
+                    key={posterKeys[index]}
                     onClick={() => handlePosterSelect(poster)}
                     className="relative transition-all duration-200 hover:scale-105"
                     style={{
