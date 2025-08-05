@@ -39,6 +39,11 @@ function PosterSelectionPageContent() {
     ? ['Option1M.avif', 'Option2M.avif', 'Option3M.webp']
     : ['Option1F.avif', 'Option2F.avif', 'Option3F.avif'];
 
+  // Debug logging
+  console.log('DEBUG - Gender:', gender);
+  console.log('DEBUG - Posters array:', posters);
+  console.log('DEBUG - First poster should be:', gender === 'male' ? 'Option1M.avif' : 'Option1F.avif');
+
   const handlePosterSelect = async (poster: string) => {
     setSelectedPoster(poster);
     
@@ -161,7 +166,9 @@ function PosterSelectionPageContent() {
               
               {/* Poster Selection - Vertical on mobile, horizontal on desktop */}
               <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6 mb-8">
-                {posters.map((poster, index) => (
+                {posters.map((poster, index) => {
+                  console.log(`DEBUG - Rendering poster ${index + 1}:`, poster, `at path: /images/posters/${poster}`);
+                  return (
                   <button
                     key={poster}
                     onClick={() => handlePosterSelect(poster)}
@@ -174,11 +181,24 @@ function PosterSelectionPageContent() {
                   >
                     <img
                       src={`/images/posters/${poster}`}
-                      alt={`Poster ${index + 1}`}
+                      alt={`Poster ${index + 1} - ${poster}`}
                       className="w-32 h-48 md:w-40 md:h-60 object-cover rounded"
+                      onError={(e) => {
+                        console.error(`DEBUG - Failed to load image:`, `/images/posters/${poster}`);
+                        console.error('Error details:', e);
+                        console.error('User agent:', navigator.userAgent);
+                        console.error('AVIF support check:', document.createElement('canvas').toDataURL('image/avif').indexOf('data:image/avif') === 0);
+                        // Show error in the UI
+                        e.currentTarget.style.border = '3px solid red';
+                        e.currentTarget.alt = `FAILED TO LOAD: ${poster}`;
+                      }}
+                      onLoad={() => {
+                        console.log(`DEBUG - Successfully loaded image:`, `/images/posters/${poster}`);
+                      }}
                     />
                   </button>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Submit Button */}
