@@ -42,7 +42,7 @@ function ResultPageContent() {
       
       // Use Hostinger SMTP endpoint for reliable email delivery
       // This uses your domain email (support@posewithdivine.com) via SMTP
-      const response = await fetch('/api/send-email.php', {
+      const response = await fetch('https://posewithdivine.com/api/send-email.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
