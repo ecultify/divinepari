@@ -52,6 +52,10 @@ export default function RootLayout({
         <link rel="preload" as="image" href="/images/landing/backgrounds/mobile1.avif" />
         {/* Critical CSS hint */}
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        {/* Cache control for dynamic content */}
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} antialiased`}>
         {children}

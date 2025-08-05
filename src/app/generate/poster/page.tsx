@@ -17,6 +17,9 @@ function PosterSelectionPageContent() {
       return;
     }
 
+    // Reset selected poster when gender changes to prevent caching issues
+    setSelectedPoster(null);
+
     // Initialize session tracking
     const initSession = async () => {
       const currentSessionId = localStorage.getItem('sessionId') || '';
@@ -160,10 +163,10 @@ function PosterSelectionPageContent() {
               </h2>
               
               {/* Poster Selection - Vertical on mobile, horizontal on desktop */}
-              <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6 mb-8">
+              <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6 mb-8" key={`posters-${gender}`}>
                 {posters.map((poster, index) => (
                   <button
-                    key={poster}
+                    key={`${poster}-${gender}-${index}`}
                     onClick={() => handlePosterSelect(poster)}
                     className="relative transition-all duration-200 hover:scale-105"
                     style={{
@@ -174,8 +177,9 @@ function PosterSelectionPageContent() {
                   >
                     <img
                       src={`/images/posters/${poster}`}
-                      alt={`Poster ${index + 1}`}
+                      alt={`${poster.replace(/\.(avif|webp)$/, '')}`}
                       className="w-32 h-48 md:w-40 md:h-60 object-cover rounded"
+                      loading="eager"
                     />
                   </button>
                 ))}
