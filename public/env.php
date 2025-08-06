@@ -51,9 +51,9 @@ $_ENV['SMTP_USERNAME'] = 'support@posewithdivine.com';
 // $_ENV['GMAIL_APP_PASSWORD'] = 'your-16-character-app-password';
 
 // Option 4: Hostinger SMTP (BEST - Uses your domain email) - CONFIGURED ✅
-// Using official Hostinger SMTP settings
+// Using official Hostinger SMTP settings with TLS for better compatibility
 $_ENV['HOSTINGER_SMTP_HOST'] = 'smtp.hostinger.com';
-$_ENV['HOSTINGER_SMTP_PORT'] = '465'; // SSL/TLS port
+$_ENV['HOSTINGER_SMTP_PORT'] = '587'; // TLS port for better compatibility (changed from 465)
 $_ENV['HOSTINGER_SMTP_USERNAME'] = 'support@posewithdivine.com';
 $_ENV['HOSTINGER_SMTP_PASSWORD'] = 'Support_@_123';
 

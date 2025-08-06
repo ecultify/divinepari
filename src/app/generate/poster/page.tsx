@@ -9,6 +9,7 @@ function PosterSelectionPageContent() {
   const gender = searchParams.get('gender');
   const [selectedPoster, setSelectedPoster] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string>('');
+  const [imagesLoaded, setImagesLoaded] = useState<boolean>(false);
 
   useEffect(() => {
     // If no gender specified, redirect back to gender selection
@@ -38,6 +39,38 @@ function PosterSelectionPageContent() {
   const posters = gender === 'male' 
     ? ['Option1M.avif', 'Option2M.avif', 'Option3M.webp']
     : ['Option1F.avif', 'Option2F.avif', 'Option3F.avif'];
+
+  // Add cache-busting parameter to handle incognito mode issues
+  const getCacheBustingUrl = (poster: string) => {
+    const timestamp = Date.now();
+    return `/images/posters/${poster}?v=${timestamp}`;
+  };
+
+  // Preload images to ensure they're available in incognito mode
+  useEffect(() => {
+    if (gender && posters.length > 0) {
+      const preloadImages = async () => {
+        const imagePromises = posters.map((poster) => {
+          return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = `/images/posters/${poster}`;
+          });
+        });
+
+        try {
+          await Promise.all(imagePromises);
+          setImagesLoaded(true);
+        } catch (error) {
+          console.error('Error preloading images:', error);
+          setImagesLoaded(true); // Still show the interface even if preloading fails
+        }
+      };
+
+      preloadImages();
+    }
+  }, [gender, posters]);
 
   const handlePosterSelect = async (poster: string) => {
     setSelectedPoster(poster);
@@ -176,6 +209,19 @@ function PosterSelectionPageContent() {
                       src={`/images/posters/${poster}`}
                       alt={`Poster ${index + 1}`}
                       className="w-32 h-48 md:w-40 md:h-60 object-cover rounded"
+                      loading="eager"
+                      decoding="sync"
+                      onError={(e) => {
+                        // Fallback handling for different image formats
+                        const target = e.target as HTMLImageElement;
+                        if (!target.src.includes('?retry=1')) {
+                          target.src = `/images/posters/${poster}?retry=1`;
+                        }
+                      }}
+                      style={{
+                        imageRendering: 'auto',
+                        objectFit: 'cover',
+                      }}
                     />
                   </button>
                 ))}
