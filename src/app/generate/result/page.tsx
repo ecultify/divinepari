@@ -154,21 +154,32 @@ function ResultPageContent() {
 
       console.log('Calling PHP face swap API endpoint: /api/process-faceswap.php');
 
-      // Start progressive loading animation while API is processing
+      // Enhanced progressive loading animation with realistic timing
       const progressInterval = setInterval(() => {
         setProgress(prev => {
-          if (prev < 85) {
-            return prev + Math.random() * 2; // Slowly increment by 0-2% each time
+          // More realistic progress curve based on typical API processing times
+          if (prev < 20) {
+            return prev + Math.random() * 3; // Quick initial progress
+          } else if (prev < 50) {
+            return prev + Math.random() * 2; // Steady progress
+          } else if (prev < 80) {
+            return prev + Math.random() * 1; // Slower as we approach API processing
+          } else if (prev < 90) {
+            return prev + Math.random() * 0.5; // Very slow near completion
           }
-          return prev; // Stop at 85% until API completes
+          return prev; // Stop at 90% until API completes
         });
-      }, 500); // Update every 500ms
+      }, 800); // Update every 800ms for smoother animation
 
       // Call PHP API endpoint directly
       let faceSwapResponse;
       let responseText = '';
+      let retryAttempt = 0;
       
       try {
+        // Add retry attempt to form data
+        formData.set('retryAttempt', '1');
+        
         faceSwapResponse = await fetch('/api/process-faceswap.php', {
           method: 'POST',
           body: formData,
@@ -191,27 +202,104 @@ function ResultPageContent() {
 
       if (!faceSwapResponse.ok) {
         let errorMessage = 'Face swap processing failed. Please try again.';
+        let errorData: any = {};
         
         try {
-          // Try to parse the response as JSON
-          const errorData = await faceSwapResponse.json().catch(e => {
+          // Try to parse the response as JSON to get enhanced error info
+          errorData = await faceSwapResponse.json().catch(e => {
             console.error('Error parsing JSON response:', e);
-            return { error: `Failed to parse response: ${responseText}` };
+            return { 
+              error: `Failed to parse response: ${responseText}`,
+              error_type: 'parse_error',
+              can_retry: true
+            };
           });
           
           console.error('Face swap API error data:', errorData);
           
-          // Use a user-friendly message instead of raw API error
-          errorMessage = errorData.error && typeof errorData.error === 'string' 
-            ? 'Processing failed. Please try again with a different photo.' 
-            : 'Face swap service is temporarily unavailable. Please try again.';
+          // Use the enhanced error message from backend
+          if (errorData.error && typeof errorData.error === 'string') {
+            errorMessage = errorData.error;
+          } else {
+            // Fallback error messages based on status code
+            switch (faceSwapResponse.status) {
+              case 429:
+                errorMessage = 'Service is experiencing high demand. Please try again in a few minutes.';
+                break;
+              case 503:
+                errorMessage = 'Service temporarily unavailable. Please try again shortly.';
+                break;
+              case 504:
+                errorMessage = 'Processing timeout. We\'re working to improve response times.';
+                break;
+              default:
+                errorMessage = 'Processing failed. Please try again.';
+            }
+          }
+          
+          // If the backend suggests this error can be retried and we haven't retried yet
+          if (errorData.can_retry && retryAttempt === 0 && 
+              ['timeout', 'network', 'api_exhausted'].includes(errorData.error_type)) {
+            
+            console.log(`Automatically retrying due to ${errorData.error_type} error...`);
+            
+            // Wait for suggested time before retry
+            const waitTime = errorData.suggested_wait || 30;
+            console.log(`Waiting ${waitTime} seconds before retry...`);
+            
+            // Show user we're retrying
+            setProgress(10);
+            const retryMessage = errorData.error_type === 'api_exhausted' 
+              ? 'High demand detected. Retrying automatically...'
+              : 'Retrying automatically...';
+              
+            // You could show this message to user here if needed
+            console.log(retryMessage);
+            
+            await new Promise(resolve => setTimeout(resolve, Math.min(waitTime, 10) * 1000));
+            
+            // Retry the request
+            retryAttempt = 1;
+            formData.set('retryAttempt', '2');
+            
+            try {
+              faceSwapResponse = await fetch('/api/process-faceswap.php', {
+                method: 'POST',
+                body: formData,
+              });
+              
+              if (faceSwapResponse.ok) {
+                // Retry succeeded, continue with normal processing
+                console.log('Retry successful!');
+              } else {
+                // Retry failed, use the original error message
+                throw new Error(errorMessage);
+              }
+            } catch (retryError) {
+              console.error('Retry attempt failed:', retryError);
+              throw new Error(`${errorMessage} (Retry also failed)`);
+            }
+          } else {
+            throw new Error(errorMessage);
+          }
+          
         } catch (parseError) {
           console.error('Error parsing API response:', parseError);
           console.log('Raw response text:', responseText);
-          errorMessage = 'Service temporarily unavailable. Please try again later.';
+          
+          // Enhanced error messages based on response content
+          if (responseText.includes('timeout') || responseText.includes('timed out')) {
+            errorMessage = 'Processing timeout. Our servers are working hard - please try again.';
+          } else if (responseText.includes('memory') || responseText.includes('limit exceeded')) {
+            errorMessage = 'Image processing limit reached. Please try with a smaller image.';
+          } else if (responseText.includes('connection') || responseText.includes('network')) {
+            errorMessage = 'Network connection issue. Please check your internet and try again.';
+          } else {
+            errorMessage = 'Service temporarily unavailable. Please try again later.';
+          }
+          
+          throw new Error(errorMessage);
         }
-        
-        throw new Error(errorMessage);
       }
 
       // Try to parse the response as JSON
@@ -222,6 +310,11 @@ function ResultPageContent() {
         console.log('Face swap success:', result.success);
         console.log('Has image URL:', !!result.imageUrl);
         console.log('Has Supabase URL:', !!result.supabaseUrl);
+        
+        // Log processing time if available
+        if (result.processing_time) {
+          console.log('Server processing time:', result.processing_time + 's');
+        }
       } catch (jsonError) {
         console.error('Error parsing successful response as JSON:', jsonError);
         console.log('Raw successful response text:', responseText);

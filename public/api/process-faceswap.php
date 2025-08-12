@@ -8,6 +8,10 @@ ini_set('display_errors', 1);
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/error.log');
 
+// Increase limits for image processing
+set_time_limit(600); // 10 minutes max execution time
+ini_set('memory_limit', '512M');
+
 // Set proper headers
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -27,6 +31,102 @@ function debug_log($message, $data = null) {
         $logEntry .= ' - ' . print_r($data, true);
     }
     error_log($logEntry . "\n", 3, __DIR__ . '/debug.log');
+}
+
+// Function to call Segmind API with retry logic
+function callSegmindAPIWithRetry($faceSwapData, $apiKey, $maxRetries = 3, $baseTimeout = 180) {
+    for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+        debug_log("Segmind API attempt $attempt/$maxRetries");
+        
+        // Increase timeout with each retry
+        $timeout = $baseTimeout + (($attempt - 1) * 60); // 180s, 240s, 300s
+        
+        $ch = curl_init('https://api.segmind.com/v1/faceswap-v4');
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($faceSwapData));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'x-api-key: ' . $apiKey,
+            'Content-Type: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
+        
+        $startTime = microtime(true);
+        $response = curl_exec($ch);
+        $endTime = microtime(true);
+        $duration = round($endTime - $startTime, 2);
+        
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+        
+        debug_log("Segmind API attempt $attempt result", [
+            'http_code' => $httpCode,
+            'duration' => $duration . 's',
+            'timeout' => $timeout . 's',
+            'curl_error' => $curlError
+        ]);
+        
+        // Handle cURL errors
+        if ($curlError) {
+            $errorMsg = "cURL error on attempt $attempt: $curlError";
+            debug_log($errorMsg);
+            
+            if ($attempt === $maxRetries) {
+                throw new Exception("API connection failed after $maxRetries attempts: $curlError");
+            }
+            
+            // Wait before retry (exponential backoff)
+            sleep(min(pow(2, $attempt - 1), 10)); // 1s, 2s, 4s (max 10s)
+            continue;
+        }
+        
+        // Handle HTTP errors that should be retried
+        if (in_array($httpCode, [429, 500, 502, 503, 504])) {
+            $errorMsg = "Segmind API returned retryable error: HTTP $httpCode";
+            debug_log($errorMsg);
+            
+            if ($attempt === $maxRetries) {
+                throw new Exception("API request failed after $maxRetries attempts with HTTP $httpCode");
+            }
+            
+            // Wait before retry (exponential backoff)
+            sleep(min(pow(2, $attempt - 1), 10));
+            continue;
+        }
+        
+        // Handle other HTTP errors (don't retry)
+        if ($httpCode !== 200) {
+            throw new Exception("API request failed with HTTP $httpCode. Response: " . substr($response, 0, 200));
+        }
+        
+        // Try to parse response
+        $responseData = json_decode($response, true);
+        if (!$responseData || !isset($responseData['image'])) {
+            $errorMsg = "Invalid API response on attempt $attempt";
+            debug_log($errorMsg, ['response_preview' => substr($response, 0, 200)]);
+            
+            if ($attempt === $maxRetries) {
+                throw new Exception("Invalid API response after $maxRetries attempts");
+            }
+            
+            sleep(1); // Short wait for invalid response
+            continue;
+        }
+        
+        debug_log("Segmind API successful on attempt $attempt", [
+            'duration' => $duration . 's',
+            'response_size' => strlen($responseData['image'])
+        ]);
+        
+        return $responseData;
+    }
+    
+    throw new Exception("Unexpected error in API retry logic");
 }
 
 // Start debugging
@@ -99,7 +199,7 @@ try {
             'x-upsert: true'
         ]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60); // Increased timeout for upload
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -141,7 +241,7 @@ try {
             'Prefer: return=minimal'
         ]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15); // Increased timeout
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -322,7 +422,8 @@ try {
         'poster_selected' => $posterName,
         'user_image_uploaded' => true,
         'processing_status' => 'started',
-        'result_image_generated' => false
+        'result_image_generated' => false,
+        'retry_attempt' => isset($_POST['retryAttempt']) ? intval($_POST['retryAttempt']) : 1
     ]);
     
     // Read user image
@@ -365,29 +466,10 @@ try {
         'base64' => true
     ];
     
-    // Call Segmind FaceSwap v4 API
-    $ch = curl_init('https://api.segmind.com/v1/faceswap-v4');
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($faceSwapData));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'x-api-key: ' . $SEGMIND_API_KEY,
-        'Content-Type: application/json'
-    ]);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 120); // 2 minute timeout
+    debug_log('Starting Segmind API call with retry logic');
     
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    if ($httpCode !== 200) {
-        throw new Exception('Face swap API request failed with status: ' . $httpCode);
-    }
-    
-    $responseData = json_decode($response, true);
-    if (!$responseData || !isset($responseData['image'])) {
-        throw new Exception('Invalid API response');
-    }
+    // Call Segmind FaceSwap v4 API with retry logic
+    $responseData = callSegmindAPIWithRetry($faceSwapData, $SEGMIND_API_KEY);
     
     // Get the swapped result
     $swappedResultData = base64_decode($responseData['image']);
@@ -421,13 +503,19 @@ try {
         'success' => true,
         'imageUrl' => $imageDataUrl,
         'hasImage' => true,
-        'message' => 'Face and hair swap completed successfully'
+        'message' => 'Face and hair swap completed successfully',
+        'processing_time' => time() - ($_SERVER['REQUEST_TIME'] ?? time())
     ];
     
     // Add Supabase URL if available
     if ($supabaseResult) {
         $response['supabaseUrl'] = $supabaseResult['url'];
     }
+    
+    debug_log('Processing completed successfully', [
+        'processing_time' => $response['processing_time'] . 's',
+        'has_supabase_url' => !empty($supabaseResult)
+    ]);
     
     // Clear any accidental output and send JSON response
     ob_end_clean();
@@ -438,18 +526,43 @@ try {
     if (isset($sessionId)) {
         trackInSupabase($sessionId, [
             'processing_status' => 'failed',
-            'error_message' => $e->getMessage()
+            'error_message' => $e->getMessage(),
+            'retry_attempt' => isset($_POST['retryAttempt']) ? intval($_POST['retryAttempt']) : 1
         ]);
     }
     
     error_log('FaceSwap PHP API error: ' . $e->getMessage());
+    
+    // Determine error type for better user messaging
+    $errorMessage = $e->getMessage();
+    $errorType = 'general';
+    
+    if (strpos($errorMessage, 'timeout') !== false || strpos($errorMessage, 'timed out') !== false) {
+        $errorType = 'timeout';
+        $userMessage = 'Processing is taking longer than expected. We\'re retrying automatically.';
+    } elseif (strpos($errorMessage, 'connection') !== false || strpos($errorMessage, 'network') !== false) {
+        $errorType = 'network';
+        $userMessage = 'Network connection issue. Please check your internet and try again.';
+    } elseif (strpos($errorMessage, 'API') !== false && strpos($errorMessage, 'attempts') !== false) {
+        $errorType = 'api_exhausted';
+        $userMessage = 'Service is currently experiencing high demand. Please try again in a few minutes.';
+    } elseif (strpos($errorMessage, 'Invalid') !== false || strpos($errorMessage, 'failed to read') !== false) {
+        $errorType = 'invalid_input';
+        $userMessage = 'There was an issue with the uploaded image. Please try with a different photo.';
+    } else {
+        $errorType = 'general';
+        $userMessage = 'An unexpected error occurred. Please try again.';
+    }
     
     // Clear any accidental output and send error JSON response
     ob_end_clean();
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => 'An unexpected error occurred during face swap processing.'
+        'error' => $userMessage,
+        'error_type' => $errorType,
+        'can_retry' => in_array($errorType, ['timeout', 'network', 'api_exhausted']),
+        'suggested_wait' => $errorType === 'api_exhausted' ? 120 : 30 // seconds
     ]);
 }
 ?> 

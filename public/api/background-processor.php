@@ -490,34 +490,111 @@ function processFaceSwapBackground($userImageUrl, $posterName, $sessionId) {
             'base64' => true
         ];
         
-        $ch = curl_init('https://api.segmind.com/v1/faceswap-v4');
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($faceSwapData));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'x-api-key: ' . $SEGMIND_API_KEY,
-            'Content-Type: application/json'
-        ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+        // Use retry logic similar to main processor
+        $maxRetries = 3;
+        $baseTimeout = 180;
+        $responseData = null;
         
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($httpCode !== 200) {
-            debug_log('Segmind API failed', [
-                'status' => $httpCode,
-                'response' => $response,
-                'source_image_size' => strlen($sourceImageBase64),
-                'target_image_size' => strlen($targetImageBase64),
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            debug_log("Background Segmind API attempt $attempt/$maxRetries");
+            
+            // Increase timeout with each retry
+            $timeout = $baseTimeout + (($attempt - 1) * 60); // 180s, 240s, 300s
+            
+            $ch = curl_init('https://api.segmind.com/v1/faceswap-v4');
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($faceSwapData));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'x-api-key: ' . $SEGMIND_API_KEY,
+                'Content-Type: application/json'
+            ]);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
+            
+            $startTime = microtime(true);
+            $response = curl_exec($ch);
+            $endTime = microtime(true);
+            $duration = round($endTime - $startTime, 2);
+            
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+            
+            debug_log("Background Segmind API attempt $attempt result", [
+                'http_code' => $httpCode,
+                'duration' => $duration . 's',
+                'timeout' => $timeout . 's',
+                'curl_error' => $curlError,
                 'poster_name' => $posterName
             ]);
-            throw new Exception('Segmind API request failed with status: ' . $httpCode . ' - Response: ' . $response);
+            
+            // Handle cURL errors
+            if ($curlError) {
+                $errorMsg = "Background cURL error on attempt $attempt: $curlError";
+                debug_log($errorMsg);
+                
+                if ($attempt === $maxRetries) {
+                    throw new Exception("Background API connection failed after $maxRetries attempts: $curlError");
+                }
+                
+                // Wait before retry (exponential backoff)
+                sleep(min(pow(2, $attempt - 1), 15)); // 1s, 2s, 4s (max 15s for background)
+                continue;
+            }
+            
+            // Handle HTTP errors that should be retried
+            if (in_array($httpCode, [429, 500, 502, 503, 504])) {
+                $errorMsg = "Background Segmind API returned retryable error: HTTP $httpCode";
+                debug_log($errorMsg);
+                
+                if ($attempt === $maxRetries) {
+                    throw new Exception("Background API request failed after $maxRetries attempts with HTTP $httpCode");
+                }
+                
+                // Wait before retry (exponential backoff)
+                sleep(min(pow(2, $attempt - 1), 15));
+                continue;
+            }
+            
+            // Handle other HTTP errors (don't retry)
+            if ($httpCode !== 200) {
+                debug_log('Non-retryable HTTP error', [
+                    'status' => $httpCode,
+                    'response' => substr($response, 0, 200),
+                    'poster_name' => $posterName
+                ]);
+                throw new Exception("Background API request failed with HTTP $httpCode. Response: " . substr($response, 0, 200));
+            }
+            
+            // Try to parse response
+            $responseData = json_decode($response, true);
+            if (!$responseData || !isset($responseData['image'])) {
+                $errorMsg = "Background invalid API response on attempt $attempt";
+                debug_log($errorMsg, ['response_preview' => substr($response, 0, 200)]);
+                
+                if ($attempt === $maxRetries) {
+                    throw new Exception("Background invalid API response after $maxRetries attempts");
+                }
+                
+                sleep(2); // Slightly longer wait for background processing
+                continue;
+            }
+            
+            debug_log("Background Segmind API successful on attempt $attempt", [
+                'duration' => $duration . 's',
+                'response_size' => strlen($responseData['image']),
+                'poster_name' => $posterName
+            ]);
+            
+            break; // Success, exit retry loop
         }
         
-        $responseData = json_decode($response, true);
-        if (!$responseData || !isset($responseData['image'])) {
-            throw new Exception('Invalid Segmind API response');
+        if (!$responseData) {
+            throw new Exception("Background API retry logic failed unexpectedly");
         }
         
         // Get the swapped result
