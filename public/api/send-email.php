@@ -92,6 +92,7 @@ try {
     $userName = $input['userName'] ?? 'there';
     $posterUrl = $input['posterUrl'] ?? '';
     $sessionId = $input['sessionId'] ?? '';
+    $isFailureEmail = $input['isFailure'] ?? false;
     
     if (empty($to)) {
         throw new Exception('Email address is required');
@@ -102,9 +103,14 @@ try {
         throw new Exception('Invalid email format');
     }
     
-    // Generate email content
-    $subject = 'Your Divine Poster is Ready! 🎤✨';
-    $emailHTML = generateEmailHTML($userName, $posterUrl, $sessionId);
+    // Generate email content based on type
+    if ($isFailureEmail) {
+        $subject = 'Oops! Your Divine Poster Took Too Long to Process 🎤✨';
+        $emailHTML = generateFailureEmailHTML($userName, $sessionId);
+    } else {
+        $subject = 'Your Divine Poster is Ready! 🎤✨';
+        $emailHTML = generateEmailHTML($userName, $posterUrl, $sessionId);
+    }
     
     // Try sending via improved SMTP method first
     $emailSent = sendViaImprovedSMTP($to, $subject, $emailHTML, $FROM_EMAIL, $FROM_NAME, $SMTP_HOST, $SMTP_PORT, $SMTP_USERNAME, $SMTP_PASSWORD);
@@ -293,19 +299,28 @@ function sendViaImprovedSMTP($to, $subject, $message, $fromEmail, $fromName, $sm
     }
 }
 
-function generateEmailHTML($userName, $posterUrl, $sessionId) {
-    $downloadButton = '';
-    if ($posterUrl) {
-        $downloadButton = '
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="' . htmlspecialchars($posterUrl) . '" style="display: inline-block; background: #FFFF00; color: #000; padding: 18px 40px; text-decoration: none; border-radius: 50px; font-weight: 700; font-size: 18px; margin: 20px 0; text-align: center; box-shadow: 0 8px 25px rgba(255, 255, 0, 0.3); transition: all 0.3s ease; border: none; font-family: \'TT Firs Neue\', sans-serif; text-transform: uppercase; letter-spacing: 1px;">
-                DOWNLOAD YOUR POSTER NOW
-            </a>
-        </div>';
-    }
-    
+function generateFailureEmailHTML($userName, $sessionId) {
     $sessionInfo = $sessionId ? "Session: " . htmlspecialchars($sessionId) : '';
     
+    // Custom failure content and button for the download section
+    $downloadButton = '
+        <div class="download-section">
+            <div class="download-text">
+                Oops! It seems we were not able to generate your poster due to long processing time. Please try again with a better photo following the tips below 📸<br><br>
+                ✅ Face the Camera<br>
+                ✅ Ensure a Well-Lit Area<br>
+                ❌ No Accessories<br>
+                ❌ Avoid Specs or Shade
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="https://posewithdivine.com/" style="display: inline-block; background: #F8FF13; color: #000; width: 498px; height: 62px; line-height: 62px; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 18px; margin: 20px 0; text-align: center; box-shadow: 0 8px 25px rgba(248, 255, 19, 0.3); transition: all 0.3s ease; border: none; font-family: \'TT Firs Neue\', sans-serif; text-transform: uppercase; letter-spacing: 1px;">
+                    TRY AGAIN
+                </a>
+            </div>
+        </div>';
+    
+    // Use the EXACT same template structure as the success email, just with custom failure content
     return '
     <!DOCTYPE html>
     <html lang="en">
@@ -323,7 +338,10 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
         <!-- TT Firs Neue Font -->
         <link href="https://fonts.cdnfonts.com/css/tt-firs-neue" rel="stylesheet">
         
-        <!-- Parimatch Sans Font (using alternative) -->
+        <!-- Parimatch Sans Font -->
+        <link href="https://fonts.cdnfonts.com/css/parimatch-sans" rel="stylesheet">
+        
+        <!-- Fallback font -->
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
         
         <style>
@@ -398,20 +416,21 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
             
             .greeting {
                 font-size: 24px;
-                font-weight: 700;
-                color: #2c2c2c;
+                font-weight: 400;
+                color: #ffffff;
                 margin-bottom: 20px;
                 text-align: center;
-                font-family: "Montserrat", sans-serif;
+                font-family: Arial, sans-serif;
             }
             
             .main-message {
                 font-size: 18px;
                 color: #ffffff;
-                margin-bottom: 25px;
+                margin-bottom: 20px;
                 text-align: center;
-                line-height: 1.8;
-                font-weight: 500;
+                line-height: 1.4;
+                font-weight: 400;
+                font-family: Arial, sans-serif;
             }
             
             .highlight-text {
@@ -421,8 +440,8 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
             
             .download-section {
                 background: transparent;
-                padding: 25px 0;
-                margin: 25px 0;
+                padding: 15px 0;
+                margin: 15px 0;
                 text-align: center;
             }
             
@@ -432,38 +451,43 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                 margin-bottom: 20px;
                 line-height: 1.6;
                 text-align: center;
+                font-family: Arial, sans-serif;
+                font-weight: 400;
             }
             
             .cta-button {
                 display: inline-block;
-                background: #FFFF00;
+                background: #F8FF13;
                 color: #000000 !important;
-                padding: 18px 40px;
+                width: 498px;
+                height: 62px;
+                line-height: 62px;
                 text-decoration: none;
-                border-radius: 50px;
+                border-radius: 6px;
                 font-weight: 700;
                 font-size: 16px;
                 text-transform: uppercase;
                 letter-spacing: 1px;
-                box-shadow: 0 8px 25px rgba(255, 255, 0, 0.3);
+                box-shadow: 0 8px 25px rgba(248, 255, 19, 0.3);
                 transition: all 0.3s ease;
                 border: none;
                 font-family: "TT Firs Neue", sans-serif;
                 margin: 10px 0;
+                text-align: center;
             }
             
             .divider {
                 height: 1px;
                 background: #666;
-                margin: 30px 0;
+                margin: 20px 0;
                 width: 100%;
             }
             
             .social-section {
                 background: transparent;
                 color: white;
-                padding: 25px 0;
-                margin: 25px 0;
+                padding: 15px 0;
+                margin: 15px 0;
                 text-align: center;
             }
             
@@ -473,9 +497,9 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                 font-weight: 700;
                 margin-bottom: 20px;
                 color: #ffffff;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                text-align: center;
+                text-transform: none;
+                letter-spacing: 0px;
+                text-align: left;
             }
             
             .social-steps {
@@ -487,7 +511,7 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
             
             .social-steps li {
                 background: transparent;
-                margin: 15px 0;
+                margin: 8px 0;
                 padding: 0;
                 border-radius: 0;
                 border-left: none;
@@ -502,20 +526,18 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
             
             .step-number {
                 display: inline-block;
-                width: 40px;
-                height: 40px;
-                border: 2px solid #FFFF00;
-                background: transparent;
-                color: #FFFF00;
-                border-radius: 50%;
-                text-align: center;
-                line-height: 36px;
-                font-size: 16px;
-                font-weight: bold;
+                color: #F8FF13 !important;
+                background: transparent !important;
+                border: none !important;
+                font-size: 48px;
+                font-weight: 900;
                 margin-right: 20px;
-                font-family: "Inter", sans-serif;
+                font-family: "Parimatch Sans", "Arial Black", "Arial", sans-serif;
                 vertical-align: top;
                 flex-shrink: 0;
+                line-height: 1.2;
+                border-radius: 0 !important;
+                box-shadow: none !important;
             }
             
             .step-content {
@@ -523,6 +545,8 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                 line-height: 1.6;
                 text-align: left;
                 max-width: 400px;
+                font-family: Arial, sans-serif;
+                font-weight: 400;
             }
             
             .slot-game-section {
@@ -550,6 +574,8 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                 margin-bottom: 15px;
                 color: #ffffff;
                 text-align: center;
+                font-family: Arial, sans-serif;
+                font-weight: 400;
             }
             
             .promo-code {
@@ -557,7 +583,7 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                 color: #ffffff;
                 padding: 10px 0;
                 margin: 10px 0;
-                font-weight: 500;
+                font-weight: 400;
                 font-size: 16px;
                 display: block;
                 font-family: Arial, sans-serif;
@@ -571,11 +597,11 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
             
             .final-message {
                 font-size: 18px;
-                font-weight: 700;
+                font-weight: 400;
                 color: #ffffff;
                 margin: 25px 0;
                 text-align: center;
-                font-family: "Montserrat", sans-serif;
+                font-family: Arial, sans-serif;
             }
             
             .footer-section {
@@ -594,6 +620,8 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                 color: #cccccc;
                 margin: 5px 0;
                 opacity: 0.8;
+                font-family: Arial, sans-serif;
+                font-weight: 400;
             }
             
             .footer-small {
@@ -601,6 +629,8 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                 color: #999999;
                 margin-top: 20px;
                 line-height: 1.4;
+                font-family: Arial, sans-serif;
+                font-weight: 400;
             }
             
             /* Email Client Compatibility */
@@ -649,7 +679,489 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                 }
                 
                 .cta-button {
-                    padding: 16px 30px !important;
+                    width: 90% !important;
+                    max-width: 300px !important;
+                    height: 50px !important;
+                    line-height: 50px !important;
+                    font-size: 14px !important;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-wrapper">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td align="center">
+                        <table class="email-container" width="600" cellpadding="0" cellspacing="0" border="0">
+                            <!-- Header Section -->
+                            <tr>
+                                <td class="header-section">
+                                    <img src="https://posewithdivine.com/images/email/timetoshine.png" alt="Time to Shine" class="logo-image">
+                                </td>
+                            </tr>
+                            
+                            <!-- Main Content -->
+                            <tr>
+                                <td class="content-section">
+                    <div class="greeting">
+                        Namaste, ' . htmlspecialchars($userName) . '
+                    </div>
+                    
+                    <!-- Custom failure content -->
+                    ' . $downloadButton . '
+                    
+                    <!-- Divider -->
+                    <div class="divider"></div>
+                    
+                    <!-- Social Sharing Section -->
+                    <div class="social-section">
+                        <h3 class="social-title">Go one step further:</h3>
+                        <ul class="social-steps">
+                            <li>
+                                <span class="step-number">01</span>
+                                <div class="step-content">
+                                    <strong>SHARE YOUR POSTER</strong><br>
+                                    ON INSTAGRAM
+                                </div>
+                            </li>
+                            <li>
+                                <span class="step-number">02</span>
+                                <div class="step-content">
+                                    <strong>TAG</strong> <span class="promo-highlight">@PLAYWITHPARIMATCH</span><br>
+                                    <strong>USE</strong> <span class="promo-highlight">#DIVINExPARIMATCH</span>
+                                </div>
+                            </li>
+                            <li>
+                                <span class="step-number">03</span>
+                                <div class="step-content">
+                                    <strong>GET A CHANCE TO WIN A LIMITED-EDITION MERCH FROM DIVINE X PARIMATCH! 🧢👕</strong>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Slot Game Section -->
+                    <div class="slot-game-section">
+                        <h3 class="slot-title">DIVINE Spin City</h3>
+                        <div class="slot-message">
+                            Now bring that same energy into <u>DIVINE Spin City</u>, Parimatch\'s brand-new slot game made for champions like You!
+                        </div>
+                        <div class="promo-code">
+                            Use code <span class="promo-highlight">PM-DIVINE</span> to unlock your <span class="promo-highlight">30 Free Spins</span> and get started 🎁
+                        </div>
+                        <div style="text-align: center; margin-top: 20px;">
+                            <a href="https://track.paritrat.online/33d5905f-2d42-4b3c-b138-c70aefa9dd7b" style="display: inline-block; background: #F8FF13; color: #000; width: 498px; height: 62px; line-height: 62px; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; font-family: \'TT Firs Neue\', sans-serif; text-align: center;">
+                                PLAY NOW
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="final-message">
+                        This is your time to flex, Bro. Let\'s play! 🚀
+                    </div>
+                    
+                    <!-- Footer moved inside content -->
+                    <div style="width: 100%; background: transparent; color: #ffffff; padding: 20px 0; text-align: center; border-top: 1px solid #333; margin-top: 30px;">
+                        <div style="color: #cccccc; margin: 5px 0; opacity: 0.8; font-family: Arial, sans-serif; font-size: 12px;">
+                            This email was sent because you created a poster on our platform.
+                        </div>
+                        <div style="color: #cccccc; margin: 5px 0; opacity: 0.8; font-family: Arial, sans-serif; font-size: 12px;">
+                            ' . $sessionInfo . '
+                        </div>
+                        
+                        <div style="color: #999999; margin-top: 15px; line-height: 1.4; font-family: Arial, sans-serif; font-weight: 400; font-size: 11px;">
+                            © 2024 Divine x Parimatch. All rights reserved.<br>
+                            Visit us at posewithdivine.com
+                        </div>
+                    </div>
+                </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </body>
+    </html>';
+}
+
+function generateEmailHTML($userName, $posterUrl, $sessionId) {
+    $downloadButton = '';
+    if ($posterUrl) {
+        $downloadButton = '
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="' . htmlspecialchars($posterUrl) . '" style="display: inline-block; background: #F8FF13; color: #000; width: 498px; height: 62px; line-height: 62px; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 18px; margin: 20px 0; text-align: center; box-shadow: 0 8px 25px rgba(248, 255, 19, 0.3); transition: all 0.3s ease; border: none; font-family: \'TT Firs Neue\', sans-serif; text-transform: uppercase; letter-spacing: 1px;">
+                DOWNLOAD YOUR POSTER NOW
+            </a>
+        </div>';
+    }
+    
+    $sessionInfo = $sessionId ? "Session: " . htmlspecialchars($sessionId) : '';
+    
+    return '
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Your Divine Poster is Ready!</title>
+        
+        <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        
+        <!-- TT Firs Neue Font -->
+        <link href="https://fonts.cdnfonts.com/css/tt-firs-neue" rel="stylesheet">
+        
+        <!-- Parimatch Sans Font -->
+        <link href="https://fonts.cdnfonts.com/css/parimatch-sans" rel="stylesheet">
+        
+        <!-- Fallback font -->
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+        
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: "Poppins", "Helvetica Neue", Arial, sans-serif;
+                line-height: 1.6;
+                color: #2c2c2c;
+                margin: 0;
+                padding: 0;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                background-color: #f4f4f4;
+                width: 100%;
+            }
+            
+            .email-wrapper {
+                background-color: #2c2c2c;
+                background-image: url("https://posewithdivine.com/images/email/BG_pic.png");
+                background-size: cover;
+                background-position: center center;
+                background-repeat: no-repeat;
+                min-height: 100vh;
+                padding: 40px 0;
+                width: 100%;
+                margin: 0;
+            }
+            
+            .email-container {
+                max-width: 600px;
+                width: 100%;
+                margin: 0 auto;
+                background: #000000;
+                border-radius: 20px;
+                overflow: hidden;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+                border: 1px solid #444;
+            }
+            
+            .header-section {
+                width: 100%;
+                text-align: center;
+                padding: 0;
+                margin: 0;
+                background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+                display: block;
+            }
+            
+            .logo-image {
+                width: 100%;
+                max-width: 100%;
+                height: auto;
+                display: block;
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            .content-section {
+                width: 100%;
+                padding: 40px 30px;
+                background: #000000;
+                text-align: center;
+                display: block;
+                margin: 0;
+            }
+            
+            .greeting {
+                font-size: 24px;
+                font-weight: 400;
+                color: #ffffff;
+                margin-bottom: 20px;
+                text-align: center;
+                font-family: Arial, sans-serif;
+            }
+            
+            .main-message {
+                font-size: 18px;
+                color: #ffffff;
+                margin-bottom: 20px;
+                text-align: center;
+                line-height: 1.4;
+                font-weight: 400;
+                font-family: Arial, sans-serif;
+            }
+            
+            .highlight-text {
+                color: #FFFF00;
+                font-weight: 700;
+            }
+            
+            .download-section {
+                background: transparent;
+                padding: 15px 0;
+                margin: 15px 0;
+                text-align: center;
+            }
+            
+            .download-text {
+                font-size: 16px;
+                color: #ffffff;
+                margin-bottom: 20px;
+                line-height: 1.6;
+                text-align: center;
+                font-family: Arial, sans-serif;
+                font-weight: 400;
+            }
+            
+            .cta-button {
+                display: inline-block;
+                background: #F8FF13;
+                color: #000000 !important;
+                width: 498px;
+                height: 62px;
+                line-height: 62px;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: 700;
+                font-size: 16px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                box-shadow: 0 8px 25px rgba(248, 255, 19, 0.3);
+                transition: all 0.3s ease;
+                border: none;
+                font-family: "TT Firs Neue", sans-serif;
+                margin: 10px 0;
+                text-align: center;
+            }
+            
+            .divider {
+                height: 1px;
+                background: #666;
+                margin: 20px 0;
+                width: 100%;
+            }
+            
+            .social-section {
+                background: transparent;
+                color: white;
+                padding: 15px 0;
+                margin: 15px 0;
+                text-align: center;
+            }
+            
+            .social-title {
+                font-family: "Montserrat", sans-serif;
+                font-size: 18px;
+                font-weight: 700;
+                margin-bottom: 20px;
+                color: #ffffff;
+                text-transform: none;
+                letter-spacing: 0px;
+                text-align: left;
+            }
+            
+            .social-steps {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+                text-align: center;
+            }
+            
+            .social-steps li {
+                background: transparent;
+                margin: 8px 0;
+                padding: 0;
+                border-radius: 0;
+                border-left: none;
+                font-weight: 500;
+                font-size: 16px;
+                font-family: Arial, sans-serif;
+                color: #ffffff;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+            }
+            
+            .step-number {
+                display: inline-block;
+                color: #F8FF13 !important;
+                background: transparent !important;
+                border: none !important;
+                font-size: 48px;
+                font-weight: 900;
+                margin-right: 20px;
+                font-family: "Parimatch Sans", "Arial Black", "Arial", sans-serif;
+                vertical-align: top;
+                flex-shrink: 0;
+                line-height: 1.2;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+            }
+            
+            .step-content {
+                flex: 1;
+                line-height: 1.6;
+                text-align: left;
+                max-width: 400px;
+                font-family: Arial, sans-serif;
+                font-weight: 400;
+            }
+            
+            .slot-game-section {
+                background: transparent;
+                color: white;
+                padding: 25px 0;
+                margin: 25px 0;
+                text-align: center;
+            }
+            
+            .slot-title {
+                font-family: "Montserrat", sans-serif;
+                font-size: 18px;
+                font-weight: 700;
+                margin-bottom: 15px;
+                color: #ffffff;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                text-align: center;
+            }
+            
+            .slot-message {
+                font-size: 16px;
+                line-height: 1.6;
+                margin-bottom: 15px;
+                color: #ffffff;
+                text-align: center;
+                font-family: Arial, sans-serif;
+                font-weight: 400;
+            }
+            
+            .promo-code {
+                background: transparent;
+                color: #ffffff;
+                padding: 10px 0;
+                margin: 10px 0;
+                font-weight: 400;
+                font-size: 16px;
+                display: block;
+                font-family: Arial, sans-serif;
+                text-align: center;
+            }
+            
+            .promo-highlight {
+                color: #FFFF00;
+                font-weight: bold;
+            }
+            
+            .final-message {
+                font-size: 18px;
+                font-weight: 400;
+                color: #ffffff;
+                margin: 25px 0;
+                text-align: center;
+                font-family: Arial, sans-serif;
+            }
+            
+            .footer-section {
+                width: 100%;
+                background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+                color: #ffffff;
+                padding: 30px;
+                text-align: center;
+                border-top: 3px solid #F8FF13;
+                display: block;
+                margin: 0;
+            }
+            
+            .footer-text {
+                font-size: 14px;
+                color: #cccccc;
+                margin: 5px 0;
+                opacity: 0.8;
+                font-family: Arial, sans-serif;
+                font-weight: 400;
+            }
+            
+            .footer-small {
+                font-size: 12px;
+                color: #999999;
+                margin-top: 20px;
+                line-height: 1.4;
+                font-family: Arial, sans-serif;
+                font-weight: 400;
+            }
+            
+            /* Email Client Compatibility */
+            table {
+                border-collapse: collapse;
+                mso-table-lspace: 0pt;
+                mso-table-rspace: 0pt;
+            }
+            
+            img {
+                border: 0;
+                height: auto;
+                line-height: 100%;
+                outline: none;
+                text-decoration: none;
+                -ms-interpolation-mode: bicubic;
+            }
+            
+            /* Responsive Design */
+            @media screen and (max-width: 600px) {
+                .email-wrapper {
+                    padding: 20px 10px !important;
+                }
+                
+                .email-container {
+                    max-width: 100% !important;
+                    width: 100% !important;
+                }
+                
+                .header-section,
+                .content-section,
+                .footer-section {
+                    padding: 20px !important;
+                }
+                
+                .logo-image {
+                    padding: 20px !important;
+                }
+                
+                .greeting {
+                    font-size: 20px !important;
+                }
+                
+                .main-message {
+                    font-size: 16px !important;
+                }
+                
+                .cta-button {
+                    width: 90% !important;
+                    max-width: 300px !important;
+                    height: 50px !important;
+                    line-height: 50px !important;
                     font-size: 14px !important;
                 }
             }
@@ -728,7 +1240,7 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                             Use code <span class="promo-highlight">PM-DIVINE</span> to unlock your <span class="promo-highlight">30 Free Spins</span> and get started 🎁
                         </div>
                         <div style="text-align: center; margin-top: 20px;">
-                            <a href="https://parimatchglobal.com/en/casino/slots/game/parimatch-games-divine-spin-city" style="display: inline-block; background: #FFFF00; color: #000; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-family: \'TT Firs Neue\', sans-serif;">
+                            <a href="https://track.paritrat.online/33d5905f-2d42-4b3c-b138-c70aefa9dd7b" style="display: inline-block; background: #F8FF13; color: #000; width: 498px; height: 62px; line-height: 62px; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; font-family: \'TT Firs Neue\', sans-serif; text-align: center;">
                                 PLAY NOW
                             </a>
                         </div>
@@ -737,24 +1249,22 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                     <div class="final-message">
                         This is your time to flex, Bro. Let\'s play! 🚀
                     </div>
+                    
+                    <!-- Footer moved inside content -->
+                    <div style="width: 100%; background: transparent; color: #ffffff; padding: 20px 0; text-align: center; border-top: 1px solid #333; margin-top: 30px;">
+                        <div style="color: #cccccc; margin: 5px 0; opacity: 0.8; font-family: Arial, sans-serif; font-size: 12px;">
+                            This email was sent because you created a poster on our platform.
+                        </div>
+                        <div style="color: #cccccc; margin: 5px 0; opacity: 0.8; font-family: Arial, sans-serif; font-size: 12px;">
+                            ' . $sessionInfo . '
+                        </div>
+                        
+                        <div style="color: #999999; margin-top: 15px; line-height: 1.4; font-family: Arial, sans-serif; font-weight: 400; font-size: 11px;">
+                            © 2024 Divine x Parimatch. All rights reserved.<br>
+                            Visit us at posewithdivine.com
+                        </div>
+                    </div>
                 </div>
-                                </td>
-                            </tr>
-                            
-                            <!-- Footer -->
-                            <tr>
-                                <td class="footer-section">
-                                    <div class="footer-text">
-                                        This email was sent because you created a poster on our platform.
-                                    </div>
-                                    <div class="footer-text">
-                                        ' . $sessionInfo . '
-                                    </div>
-                                    
-                                    <div class="footer-small">
-                                        © 2024 Divine x Parimatch. All rights reserved.<br>
-                                        Visit us at posewithdivine.com
-                                    </div>
                                 </td>
                             </tr>
                         </table>

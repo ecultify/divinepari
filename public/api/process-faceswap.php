@@ -33,13 +33,53 @@ function debug_log($message, $data = null) {
     error_log($logEntry . "\n", 3, __DIR__ . '/debug.log');
 }
 
+// Function to check API health before processing
+function checkSegmindAPIHealth($apiKey) {
+    $healthCheck = [
+        'source_image' => '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAyADIDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD6pooooA',
+        'target_image' => '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAyADIDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD6pooooA',
+        'model_type' => 'quality',
+        'swap_type' => 'face',
+        'style_type' => 'normal',
+        'image_format' => 'png',
+        'image_quality' => 50,
+        'hardware' => 'fast',
+        'base64' => true
+    ];
+    
+    $ch = curl_init('https://api.segmind.com/v1/faceswap-v4');
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($healthCheck));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'x-api-key: ' . $apiKey,
+        'Content-Type: application/json'
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Short timeout for health check
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    return $httpCode === 200;
+}
+
 // Function to call Segmind API with retry logic
-function callSegmindAPIWithRetry($faceSwapData, $apiKey, $maxRetries = 3, $baseTimeout = 180) {
+function callSegmindAPIWithRetry($faceSwapData, $apiKey, $maxRetries = 3, $baseTimeout = 300) {
+    // Check API health before starting if it's the first attempt
+    if (!checkSegmindAPIHealth($apiKey)) {
+        debug_log("API health check failed, using conservative retry strategy");
+        $maxRetries = 5; // More retries when API is having issues
+        $baseTimeout = 240; // Shorter initial timeout when API is struggling
+    }
+    
     for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
         debug_log("Segmind API attempt $attempt/$maxRetries");
         
         // Increase timeout with each retry
-        $timeout = $baseTimeout + (($attempt - 1) * 60); // 180s, 240s, 300s
+        $timeout = $baseTimeout + (($attempt - 1) * 60); // 300s, 360s, 420s
         
         $ch = curl_init('https://api.segmind.com/v1/faceswap-v4');
         curl_setopt($ch, CURLOPT_POST, true);
@@ -80,8 +120,10 @@ function callSegmindAPIWithRetry($faceSwapData, $apiKey, $maxRetries = 3, $baseT
                 throw new Exception("API connection failed after $maxRetries attempts: $curlError");
             }
             
-            // Wait before retry (exponential backoff)
-            sleep(min(pow(2, $attempt - 1), 10)); // 1s, 2s, 4s (max 10s)
+            // Wait before retry (improved exponential backoff with jitter)
+            $backoffTime = min(pow(2, $attempt), 30); // 2s, 4s, 8s (max 30s)
+            $jitter = rand(0, 1000) / 1000; // Add 0-1s random jitter
+            sleep($backoffTime + $jitter);
             continue;
         }
         
@@ -94,8 +136,10 @@ function callSegmindAPIWithRetry($faceSwapData, $apiKey, $maxRetries = 3, $baseT
                 throw new Exception("API request failed after $maxRetries attempts with HTTP $httpCode");
             }
             
-            // Wait before retry (exponential backoff)
-            sleep(min(pow(2, $attempt - 1), 10));
+            // Wait before retry (improved exponential backoff with jitter)
+            $backoffTime = min(pow(2, $attempt), 30); // 2s, 4s, 8s (max 30s)
+            $jitter = rand(0, 1000) / 1000; // Add 0-1s random jitter
+            sleep($backoffTime + $jitter);
             continue;
         }
         
@@ -114,7 +158,9 @@ function callSegmindAPIWithRetry($faceSwapData, $apiKey, $maxRetries = 3, $baseT
                 throw new Exception("Invalid API response after $maxRetries attempts");
             }
             
-            sleep(1); // Short wait for invalid response
+            // Wait before retry for invalid response
+            $backoffTime = min(pow(2, $attempt - 1), 15); // 1s, 2s, 4s (max 15s)
+            sleep($backoffTime);
             continue;
         }
         
@@ -214,6 +260,98 @@ try {
         } else {
             error_log("Supabase upload failed with status $httpCode: $response");
             return null;
+        }
+    }
+
+    function sendFailureNotificationAsync($sessionId, $errorMessage) {
+        try {
+                    // Get user email from Supabase
+        global $SUPABASE_URL, $SUPABASE_ANON_KEY, $SUPABASE_SERVICE_KEY;
+        
+        // Try service key first, then anon key
+        $authKey = $SUPABASE_SERVICE_KEY ?: $SUPABASE_ANON_KEY;
+        
+        if (!$SUPABASE_URL || !$authKey) {
+            debug_log('Failure email skipped - Supabase not configured', [
+                'has_url' => !empty($SUPABASE_URL),
+                'has_service_key' => !empty($SUPABASE_SERVICE_KEY),
+                'has_anon_key' => !empty($SUPABASE_ANON_KEY)
+            ]);
+            return;
+        }
+            
+            // Get user data from generation_results table
+            $supabaseHeaders = [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $authKey,
+                'apikey: ' . $authKey
+            ];
+            
+            $url = $SUPABASE_URL . '/rest/v1/generation_results?session_id=eq.' . urlencode($sessionId) . '&select=user_email,user_name';
+            
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $supabaseHeaders);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            if ($httpCode === 200) {
+                $userData = json_decode($response, true);
+                if (!empty($userData) && !empty($userData[0]['user_email'])) {
+                    $userEmail = $userData[0]['user_email'];
+                    $userName = $userData[0]['user_name'] ?? 'there';
+                    
+                    // Determine failure reason for user-friendly message
+                    $reason = 'processing_timeout';
+                    if (strpos($errorMessage, 'timeout') !== false) {
+                        $reason = 'processing_timeout';
+                    } elseif (strpos($errorMessage, 'API') !== false || strpos($errorMessage, 'network') !== false) {
+                        $reason = 'api_error';
+                    } elseif (strpos($errorMessage, 'image') !== false) {
+                        $reason = 'image_processing_error';
+                    }
+                    
+                    // Call failure email API asynchronously
+                    $failureData = [
+                        'to' => $userEmail,
+                        'userName' => $userName,
+                        'sessionId' => $sessionId,
+                        'reason' => $reason
+                    ];
+                    
+                    // Make async request to failure email API
+                    $emailUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . 
+                               '://' . $_SERVER['HTTP_HOST'] . '/api/send-failure-email.php';
+                    
+                    $emailCh = curl_init($emailUrl);
+                    curl_setopt($emailCh, CURLOPT_POST, true);
+                    curl_setopt($emailCh, CURLOPT_POSTFIELDS, json_encode($failureData));
+                    curl_setopt($emailCh, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                    curl_setopt($emailCh, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($emailCh, CURLOPT_TIMEOUT, 10); // Longer timeout for reliability
+                    curl_setopt($emailCh, CURLOPT_CONNECTTIMEOUT, 5);
+                    curl_setopt($emailCh, CURLOPT_NOSIGNAL, 1); // Prevent signals from interrupting
+                    
+                    $emailResponse = curl_exec($emailCh);
+                    $emailHttpCode = curl_getinfo($emailCh, CURLINFO_HTTP_CODE);
+                    $emailError = curl_error($emailCh);
+                    curl_close($emailCh);
+                    
+                    debug_log('Failure notification email result', [
+                        'session_id' => $sessionId,
+                        'user_email' => $userEmail,
+                        'reason' => $reason,
+                        'http_code' => $emailHttpCode,
+                        'curl_error' => $emailError,
+                        'response' => substr($emailResponse, 0, 200) // First 200 chars
+                    ]);
+                }
+            }
+        } catch (Exception $e) {
+            debug_log('Failed to send failure notification', ['error' => $e->getMessage()]);
         }
     }
 
@@ -529,6 +667,9 @@ try {
             'error_message' => $e->getMessage(),
             'retry_attempt' => isset($_POST['retryAttempt']) ? intval($_POST['retryAttempt']) : 1
         ]);
+        
+        // Send failure notification email in background
+        sendFailureNotificationAsync($sessionId, $e->getMessage());
     }
     
     error_log('FaceSwap PHP API error: ' . $e->getMessage());

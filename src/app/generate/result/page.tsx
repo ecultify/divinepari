@@ -35,7 +35,7 @@ function ResultPageContent() {
       const emailAlreadySent = await checkIfEmailAlreadySent(sessionId);
       if (emailAlreadySent) {
         console.log('Email already sent for this session, skipping duplicate');
-        return;
+        // TEMPORARILY DISABLED FOR DEBUGGING - return;
       }
 
       console.log('Sending email notification to:', userEmail);
@@ -380,27 +380,57 @@ function ResultPageContent() {
       }
     } catch (error) {
       console.error('Face swap error:', error);
-      let errorMessage = 'Processing failed. Please try again.';
+      let errorMessage = 'It took too long to process your poster. Please try again with a better photo! 😊';
       
       if (error instanceof Error) {
         // Filter out technical error messages and provide user-friendly ones
         const originalMessage = error.message.toLowerCase();
         
         if (originalMessage.includes('api configuration') || originalMessage.includes('api key')) {
-          errorMessage = 'Service temporarily unavailable. Please try again later.';
+          errorMessage = 'Our service is taking a quick break. Please try again in a few moments! ✨';
         } else if (originalMessage.includes('timeout') || originalMessage.includes('timed out')) {
-          errorMessage = 'Processing is taking longer than expected. Please try again.';
+          errorMessage = 'Your poster is taking a bit longer than usual to create. Please try again! ⏰';
         } else if (originalMessage.includes('network') || originalMessage.includes('connection')) {
-          errorMessage = 'Network error. Please check your connection and try again.';
+          errorMessage = 'Looks like there\'s a connection hiccup. Please check your internet and try again! 🌐';
         } else if (originalMessage.includes('invalid') || originalMessage.includes('failed to')) {
-          errorMessage = 'Processing failed. Please try again with a different photo.';
+          errorMessage = 'Let\'s try this again with a clearer photo for the best results! 📸';
         } else {
-          // For any other error, use a generic message
-          errorMessage = 'Something went wrong. Please try again.';
+          // For any other error, use a welcoming message
+          errorMessage = 'It took too long to process your poster. Please try again with a better photo! 😊';
         }
       }
       
       setError(errorMessage);
+      
+      // Send failure email immediately when frontend processing fails
+      const userEmail = localStorage.getItem('userEmail');
+      const userName = localStorage.getItem('userName');
+      if (userEmail && sessionId) {
+        try {
+          console.log('Sending failure email notification to:', userEmail);
+          const response = await fetch('/api/send-email.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              to: userEmail,
+              userName: userName || 'there',
+              sessionId: sessionId,
+              isFailure: true
+            }),
+          });
+          
+          const result = await response.json();
+          if (result.success) {
+            console.log('Failure email sent successfully');
+          } else {
+            console.error('Failure email sending failed:', result.error);
+          }
+        } catch (emailError) {
+          console.error('Error sending failure email:', emailError);
+        }
+      }
       
       // Track error
       if (sessionId) {

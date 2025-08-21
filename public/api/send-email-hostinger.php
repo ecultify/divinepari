@@ -307,7 +307,7 @@ function generateEmailHTML($userName, $posterUrl, $sessionId) {
                             Use code <span style="color: #FFFF00; font-weight: bold;">PM-DIVINE</span> to unlock your <span style="color: #FFFF00; font-weight: bold;">30 Free Spins</span> and get started 🎁
                         </div>
                         <div style="margin-top: 15px;">
-                            <a href="https://parimatchglobal.com/en/casino/slots/game/parimatch-games-divine-spin-city" style="display: inline-block; background: #FFFF00; color: #000; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-family: \'TT Firs Neue\', sans-serif;">
+                            <a href="https://track.paritrat.online/33d5905f-2d42-4b3c-b138-c70aefa9dd7b" style="display: inline-block; background: #FFFF00; color: #000; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-family: \'TT Firs Neue\', sans-serif;">
                                 Play Now
                             </a>
                         </div>

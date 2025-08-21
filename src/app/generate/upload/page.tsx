@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { compressForFaceSwap, needsCompression, isValidImageFile, getFileSizeKB } from '@/utils/imageCompression';
 import { trackUserStep, trackGenerationResult, uploadBase64Image, queueBackgroundJob, trackUserSession } from '../../../lib/supabase';
 
 function UploadPhotoPageContent() {
@@ -52,11 +53,28 @@ function UploadPhotoPageContent() {
   const handleFileUpload = async (file: File) => {
     console.log('=== FILE UPLOAD DEBUG ===');
     console.log('File uploaded:', file.name, file.type);
+    console.log('Original file size:', getFileSizeKB(file).toFixed(2), 'KB');
     console.log('Current gender:', gender);
     console.log('Current selectedPoster:', selectedPoster);
     console.log('Current sessionId:', sessionId);
     
-    if (file && file.type.startsWith('image/')) {
+    if (file && isValidImageFile(file)) {
+      // Check if compression is needed
+      const needsComp = await needsCompression(file);
+      console.log('Image needs compression:', needsComp);
+      
+      let processedFile = file;
+      
+      if (needsComp) {
+        console.log('Compressing image for face swap optimization...');
+        try {
+          processedFile = await compressForFaceSwap(file);
+          console.log('Compressed file size:', getFileSizeKB(processedFile).toFixed(2), 'KB');
+        } catch (error) {
+          console.error('Compression failed, using original file:', error);
+          processedFile = file;
+        }
+      }
       const reader = new FileReader();
       reader.onload = async (e) => {
         console.log('File read successfully, starting upload to Supabase...');
@@ -70,7 +88,7 @@ function UploadPhotoPageContent() {
             e.target?.result as string,
             sessionId,
             'user_photo',
-            file.name
+            processedFile.name
           );
 
           // Queue background job as backup for users who might leave
@@ -118,7 +136,7 @@ function UploadPhotoPageContent() {
           });
         }
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(processedFile);
     }
   };
 
@@ -304,12 +322,13 @@ function UploadPhotoPageContent() {
         canvas.height = video.videoHeight;
         context?.drawImage(video, 0, 0);
         
-        canvas.toBlob((blob) => {
+        canvas.toBlob(async (blob) => {
           if (blob) {
             const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+            // Apply compression to camera photos as well for consistency
             handleFileUpload(file);
           }
-        }, 'image/jpeg', 0.8);
+        }, 'image/jpeg', 0.85);
         
         // Clean up
         stream.getTracks().forEach(track => track.stop());

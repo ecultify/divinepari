@@ -344,6 +344,11 @@ try {
 
         debug_log('Job failed', ['error' => $result['error'], 'attempts' => $attempts]);
         
+        // Send failure email if final attempt - send regardless of failure reason
+        if ($attempts >= 2 && !empty($userEmail)) {
+            sendFailureNotificationBackground($userEmail, $userName, $sessionId, $result['error']);
+        }
+        
         ob_end_clean();
         echo json_encode([
             'success' => false, 
@@ -361,6 +366,11 @@ try {
             'error_msg' => $e->getMessage(),
             'should_retry' => true
         ]);
+    }
+    
+    // Send failure email if we have user data and it's a final failure - send regardless of failure reason
+    if (isset($userEmail) && !empty($userEmail) && isset($attempts) && $attempts >= 2) {
+        sendFailureNotificationBackground($userEmail, $userName ?? '', $sessionId ?? '', $e->getMessage());
     }
     
     ob_end_clean();
@@ -492,14 +502,18 @@ function processFaceSwapBackground($userImageUrl, $posterName, $sessionId) {
         
         // Use retry logic similar to main processor
         $maxRetries = 3;
-        $baseTimeout = 180;
+        $baseTimeout = 300;
         $responseData = null;
         
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
             debug_log("Background Segmind API attempt $attempt/$maxRetries");
             
-            // Increase timeout with each retry
-            $timeout = $baseTimeout + (($attempt - 1) * 60); // 180s, 240s, 300s
+            // Adaptive timeout based on attempt and processing context
+            if ($attempt > 2) {
+                $timeout = $baseTimeout + (($attempt - 1) * 90); // Longer waits for background processing: 300s, 390s, 480s
+            } else {
+                $timeout = $baseTimeout + (($attempt - 1) * 60); // Standard progression: 300s, 360s
+            }
             
             $ch = curl_init('https://api.segmind.com/v1/faceswap-v4');
             curl_setopt($ch, CURLOPT_POST, true);
@@ -624,6 +638,48 @@ function processFaceSwapBackground($userImageUrl, $posterName, $sessionId) {
             'success' => false,
             'error' => $e->getMessage()
         ];
+    }
+}
+
+// Failure email notification function
+function sendFailureNotificationBackground($userEmail, $userName, $sessionId, $errorMessage) {
+    try {
+        debug_log('Sending failure notification email', ['email' => $userEmail, 'session' => $sessionId]);
+        
+        // Send failure email regardless of the specific reason - always use timeout as the user-friendly reason
+        $reason = 'processing_timeout';
+        
+        // Call failure email API
+        $failureData = [
+            'to' => $userEmail,
+            'userName' => $userName,
+            'sessionId' => $sessionId,
+            'reason' => $reason
+        ];
+        
+        $ch = curl_init($_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . '/api/send-failure-email.php');
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($failureData));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15); // Longer timeout for background processing
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        $success = $httpCode === 200;
+        debug_log('Failure email notification result', [
+            'success' => $success, 
+            'status' => $httpCode,
+            'response' => $response,
+            'reason' => $reason
+        ]);
+        
+        return $success;
+    } catch (Exception $e) {
+        debug_log('Failure email notification failed', ['error' => $e->getMessage()]);
+        return false;
     }
 }
 
