@@ -24,13 +24,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
-// Function to log debug information
-function debug_log($message, $data = null) {
-    $logEntry = date('Y-m-d H:i:s') . ' - ' . $message;
+// Function to log debug information with enhanced details
+function debug_log($message, $data = null, $level = 'INFO') {
+    $logEntry = date('Y-m-d H:i:s') . " [$level] - " . $message;
     if ($data !== null) {
         $logEntry .= ' - ' . print_r($data, true);
     }
     error_log($logEntry . "\n", 3, __DIR__ . '/debug.log');
+    
+    // Also log to separate error log for failures
+    if ($level === 'ERROR' || $level === 'CRITICAL') {
+        error_log($logEntry . "\n", 3, __DIR__ . '/error_detailed.log');
+    }
+}
+
+// Function to log processing step with timing
+function log_processing_step($step, $sessionId, $data = null, $startTime = null) {
+    $timing = '';
+    if ($startTime !== null) {
+        $duration = round(microtime(true) - $startTime, 3);
+        $timing = " (took {$duration}s)";
+    }
+    
+    debug_log("STEP: $step - Session: $sessionId" . $timing, $data, 'STEP');
 }
 
 // Function to check API health before processing
@@ -68,18 +84,43 @@ function checkSegmindAPIHealth($apiKey) {
 
 // Function to call Segmind API with retry logic
 function callSegmindAPIWithRetry($faceSwapData, $apiKey, $maxRetries = 3, $baseTimeout = 300) {
+    $sessionId = $GLOBALS['sessionId'] ?? 'unknown';
+    
     // Check API health before starting if it's the first attempt
-    if (!checkSegmindAPIHealth($apiKey)) {
-        debug_log("API health check failed, using conservative retry strategy");
+    $healthCheckStart = microtime(true);
+    $apiHealthy = checkSegmindAPIHealth($apiKey);
+    $healthCheckDuration = round(microtime(true) - $healthCheckStart, 3);
+    
+    debug_log("API health check completed", [
+        'session_id' => $sessionId,
+        'healthy' => $apiHealthy,
+        'duration' => $healthCheckDuration . 's'
+    ], $apiHealthy ? 'INFO' : 'WARN');
+    
+    if (!$apiHealthy) {
+        debug_log("API health check failed, using conservative retry strategy", [
+            'session_id' => $sessionId,
+            'original_max_retries' => $maxRetries,
+            'original_timeout' => $baseTimeout
+        ], 'WARN');
         $maxRetries = 5; // More retries when API is having issues
         $baseTimeout = 240; // Shorter initial timeout when API is struggling
     }
     
+    $allAttemptErrors = [];
+    $totalStartTime = microtime(true);
+    
     for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
-        debug_log("Segmind API attempt $attempt/$maxRetries");
+        $attemptStartTime = microtime(true);
         
         // Increase timeout with each retry
         $timeout = $baseTimeout + (($attempt - 1) * 60); // 300s, 360s, 420s
+        
+        debug_log("Starting Segmind API attempt $attempt/$maxRetries", [
+            'session_id' => $sessionId,
+            'timeout' => $timeout . 's',
+            'attempt_delay' => $attempt > 1 ? round($attemptStartTime - $totalStartTime, 3) . 's' : '0s'
+        ]);
         
         $ch = curl_init('https://api.segmind.com/v1/faceswap-v4');
         curl_setopt($ch, CURLOPT_POST, true);
@@ -95,83 +136,159 @@ function callSegmindAPIWithRetry($faceSwapData, $apiKey, $maxRetries = 3, $baseT
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
         
-        $startTime = microtime(true);
+        $curlStartTime = microtime(true);
         $response = curl_exec($ch);
-        $endTime = microtime(true);
-        $duration = round($endTime - $startTime, 2);
+        $curlEndTime = microtime(true);
+        $duration = round($curlEndTime - $curlStartTime, 3);
         
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
+        $curlInfo = curl_getinfo($ch);
         curl_close($ch);
         
-        debug_log("Segmind API attempt $attempt result", [
+        $attemptLog = [
+            'session_id' => $sessionId,
+            'attempt' => $attempt,
             'http_code' => $httpCode,
             'duration' => $duration . 's',
             'timeout' => $timeout . 's',
-            'curl_error' => $curlError
-        ]);
+            'curl_error' => $curlError,
+            'response_size' => strlen($response ?? ''),
+            'connect_time' => round($curlInfo['connect_time'] ?? 0, 3) . 's',
+            'namelookup_time' => round($curlInfo['namelookup_time'] ?? 0, 3) . 's',
+            'total_time' => round($curlInfo['total_time'] ?? 0, 3) . 's'
+        ];
         
         // Handle cURL errors
         if ($curlError) {
             $errorMsg = "cURL error on attempt $attempt: $curlError";
-            debug_log($errorMsg);
+            $attemptLog['error_type'] = 'curl_error';
+            $allAttemptErrors[] = $attemptLog;
+            
+            debug_log($errorMsg, $attemptLog, 'ERROR');
             
             if ($attempt === $maxRetries) {
+                debug_log("API connection failed after all attempts", [
+                    'session_id' => $sessionId,
+                    'total_attempts' => $maxRetries,
+                    'total_duration' => round(microtime(true) - $totalStartTime, 3) . 's',
+                    'all_errors' => $allAttemptErrors
+                ], 'CRITICAL');
                 throw new Exception("API connection failed after $maxRetries attempts: $curlError");
             }
             
             // Wait before retry (improved exponential backoff with jitter)
             $backoffTime = min(pow(2, $attempt), 30); // 2s, 4s, 8s (max 30s)
             $jitter = rand(0, 1000) / 1000; // Add 0-1s random jitter
-            sleep($backoffTime + $jitter);
+            $totalBackoff = $backoffTime + $jitter;
+            
+            debug_log("Waiting before retry", [
+                'session_id' => $sessionId,
+                'backoff_time' => round($totalBackoff, 3) . 's',
+                'next_attempt' => $attempt + 1
+            ]);
+            
+            sleep($totalBackoff);
             continue;
         }
         
         // Handle HTTP errors that should be retried
         if (in_array($httpCode, [429, 500, 502, 503, 504])) {
             $errorMsg = "Segmind API returned retryable error: HTTP $httpCode";
-            debug_log($errorMsg);
+            $attemptLog['error_type'] = 'retryable_http_error';
+            $attemptLog['response_preview'] = substr($response ?? '', 0, 200);
+            $allAttemptErrors[] = $attemptLog;
+            
+            debug_log($errorMsg, $attemptLog, 'ERROR');
             
             if ($attempt === $maxRetries) {
+                debug_log("API request failed after all retryable attempts", [
+                    'session_id' => $sessionId,
+                    'final_http_code' => $httpCode,
+                    'total_attempts' => $maxRetries,
+                    'total_duration' => round(microtime(true) - $totalStartTime, 3) . 's',
+                    'all_errors' => $allAttemptErrors
+                ], 'CRITICAL');
                 throw new Exception("API request failed after $maxRetries attempts with HTTP $httpCode");
             }
             
             // Wait before retry (improved exponential backoff with jitter)
             $backoffTime = min(pow(2, $attempt), 30); // 2s, 4s, 8s (max 30s)
             $jitter = rand(0, 1000) / 1000; // Add 0-1s random jitter
-            sleep($backoffTime + $jitter);
+            $totalBackoff = $backoffTime + $jitter;
+            
+            debug_log("Waiting before retry", [
+                'session_id' => $sessionId,
+                'backoff_time' => round($totalBackoff, 3) . 's',
+                'next_attempt' => $attempt + 1
+            ]);
+            
+            sleep($totalBackoff);
             continue;
         }
         
         // Handle other HTTP errors (don't retry)
         if ($httpCode !== 200) {
-            throw new Exception("API request failed with HTTP $httpCode. Response: " . substr($response, 0, 200));
+            $attemptLog['error_type'] = 'non_retryable_http_error';
+            $attemptLog['response_preview'] = substr($response ?? '', 0, 500);
+            
+            debug_log("Non-retryable HTTP error", $attemptLog, 'ERROR');
+            throw new Exception("API request failed with HTTP $httpCode. Response: " . substr($response ?? '', 0, 200));
         }
         
         // Try to parse response
         $responseData = json_decode($response, true);
-        if (!$responseData || !isset($responseData['image'])) {
+        $jsonError = json_last_error();
+        
+        if ($jsonError !== JSON_ERROR_NONE || !$responseData || !isset($responseData['image'])) {
             $errorMsg = "Invalid API response on attempt $attempt";
-            debug_log($errorMsg, ['response_preview' => substr($response, 0, 200)]);
+            $attemptLog['error_type'] = 'invalid_response';
+            $attemptLog['json_error'] = $jsonError;
+            $attemptLog['json_error_msg'] = json_last_error_msg();
+            $attemptLog['response_preview'] = substr($response ?? '', 0, 300);
+            $attemptLog['has_image_key'] = isset($responseData['image']);
+            $allAttemptErrors[] = $attemptLog;
+            
+            debug_log($errorMsg, $attemptLog, 'ERROR');
             
             if ($attempt === $maxRetries) {
-                throw new Exception("Invalid API response after $maxRetries attempts");
+                debug_log("Invalid API response after all attempts", [
+                    'session_id' => $sessionId,
+                    'total_attempts' => $maxRetries,
+                    'total_duration' => round(microtime(true) - $totalStartTime, 3) . 's',
+                    'all_errors' => $allAttemptErrors
+                ], 'CRITICAL');
+                throw new Exception("Invalid API response after $maxRetries attempts. Last JSON error: " . json_last_error_msg());
             }
             
             // Wait before retry for invalid response
             $backoffTime = min(pow(2, $attempt - 1), 15); // 1s, 2s, 4s (max 15s)
+            debug_log("Waiting before retry", [
+                'session_id' => $sessionId,
+                'backoff_time' => $backoffTime . 's',
+                'next_attempt' => $attempt + 1
+            ]);
             sleep($backoffTime);
             continue;
         }
         
-        debug_log("Segmind API successful on attempt $attempt", [
-            'duration' => $duration . 's',
-            'response_size' => strlen($responseData['image'])
+        // Success!
+        $successLog = array_merge($attemptLog, [
+            'success' => true,
+            'response_image_size' => strlen($responseData['image']),
+            'total_duration' => round(microtime(true) - $totalStartTime, 3) . 's'
         ]);
+        
+        debug_log("Segmind API successful on attempt $attempt", $successLog);
         
         return $responseData;
     }
     
+    // This should never be reached, but just in case
+    debug_log("Unexpected error in API retry logic", [
+        'session_id' => $sessionId,
+        'all_errors' => $allAttemptErrors
+    ], 'CRITICAL');
     throw new Exception("Unexpected error in API retry logic");
 }
 
@@ -194,10 +311,16 @@ try {
     }
     
     if (!empty($missing_extensions)) {
+        debug_log('Missing PHP extensions detected', ['missing' => $missing_extensions], 'CRITICAL');
         throw new Exception('Missing PHP extensions: ' . implode(', ', $missing_extensions));
     }
     
-    debug_log('All required extensions available');
+    debug_log('All required extensions available', [
+        'gd_version' => gd_info()['GD Version'] ?? 'unknown',
+        'curl_version' => curl_version()['version'] ?? 'unknown',
+        'memory_limit' => ini_get('memory_limit'),
+        'max_execution_time' => ini_get('max_execution_time')
+    ]);
     
     // Load configuration
     $config_path = __DIR__ . '/../config.php';
@@ -542,14 +665,54 @@ try {
     
     // Get form data
     if (!isset($_FILES['userImage']) || !isset($_POST['posterName']) || !isset($_POST['sessionId'])) {
+        debug_log('Missing required parameters', [
+            'userImage_exists' => isset($_FILES['userImage']),
+            'posterName_exists' => isset($_POST['posterName']),
+            'sessionId_exists' => isset($_POST['sessionId']),
+            'files_count' => count($_FILES ?? []),
+            'post_count' => count($_POST ?? [])
+        ], 'ERROR');
         throw new Exception('Missing required parameters');
     }
-    
-    debug_log('Form data validated successfully');
     
     $userImageFile = $_FILES['userImage'];
     $posterName = $_POST['posterName'];
     $sessionId = $_POST['sessionId'];
+    
+    // Make sessionId available globally for logging
+    $GLOBALS['sessionId'] = $sessionId;
+    
+    // Validate user image file
+    if ($userImageFile['error'] !== UPLOAD_ERR_OK) {
+        debug_log('User image upload error', [
+            'session_id' => $sessionId,
+            'upload_error_code' => $userImageFile['error'],
+            'upload_error_message' => [
+                UPLOAD_ERR_INI_SIZE => 'File exceeds upload_max_filesize',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds MAX_FILE_SIZE',
+                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                UPLOAD_ERR_EXTENSION => 'File upload stopped by extension'
+            ][$userImageFile['error']] ?? 'Unknown upload error',
+            'file_size' => $userImageFile['size'] ?? 'unknown',
+            'file_type' => $userImageFile['type'] ?? 'unknown'
+        ], 'ERROR');
+        throw new Exception('User image upload failed: ' . ($userImageFile['error'] ?? 'unknown error'));
+    }
+    
+    debug_log('Form data validated successfully', [
+        'session_id' => $sessionId,
+        'poster_name' => $posterName,
+        'user_image_size' => $userImageFile['size'],
+        'user_image_type' => $userImageFile['type']
+    ]);
+    
+    log_processing_step('VALIDATION_COMPLETE', $sessionId, [
+        'poster' => $posterName,
+        'image_size_kb' => round($userImageFile['size'] / 1024, 2)
+    ]);
     
     // Extract gender from poster name
     $gender = (strpos($posterName, 'M.jpg') !== false) ? 'male' : 'female';
@@ -565,30 +728,110 @@ try {
     ]);
     
     // Read user image
+    $stepStartTime = microtime(true);
+    log_processing_step('IMAGE_READ_START', $sessionId, ['tmp_file' => $userImageFile['tmp_name']]);
+    
     $userImageData = file_get_contents($userImageFile['tmp_name']);
     if (!$userImageData) {
+        debug_log('Failed to read user image file', [
+            'session_id' => $sessionId,
+            'tmp_name' => $userImageFile['tmp_name'],
+            'file_exists' => file_exists($userImageFile['tmp_name']),
+            'is_readable' => is_readable($userImageFile['tmp_name']),
+            'file_size' => filesize($userImageFile['tmp_name']) ?: 'unknown'
+        ], 'ERROR');
         throw new Exception('Failed to read user image');
     }
     
+    log_processing_step('IMAGE_READ_COMPLETE', $sessionId, [
+        'data_size_bytes' => strlen($userImageData),
+        'data_size_kb' => round(strlen($userImageData) / 1024, 2)
+    ], $stepStartTime);
+    
     // Resize user image
-    $resizedUserImageData = resizeImage($userImageData, 1024, 1024);
-    $userImageBase64 = base64_encode($resizedUserImageData);
+    $stepStartTime = microtime(true);
+    log_processing_step('IMAGE_RESIZE_START', $sessionId, ['target_size' => '1024x1024']);
+    
+    try {
+        $resizedUserImageData = resizeImage($userImageData, 1024, 1024);
+        $userImageBase64 = base64_encode($resizedUserImageData);
+        
+        log_processing_step('IMAGE_RESIZE_COMPLETE', $sessionId, [
+            'original_size_bytes' => strlen($userImageData),
+            'resized_size_bytes' => strlen($resizedUserImageData),
+            'base64_size_bytes' => strlen($userImageBase64),
+            'compression_ratio' => round(strlen($resizedUserImageData) / strlen($userImageData), 3)
+        ], $stepStartTime);
+    } catch (Exception $e) {
+        debug_log('Image resize failed', [
+            'session_id' => $sessionId,
+            'error' => $e->getMessage(),
+            'original_size' => strlen($userImageData)
+        ], 'ERROR');
+        throw new Exception('Failed to resize user image: ' . $e->getMessage());
+    }
     
     // Load poster image
+    $stepStartTime = microtime(true);
     $posterImagePath = "../images/posters/" . $posterName;
+    
+    log_processing_step('POSTER_LOAD_START', $sessionId, ['poster_path' => $posterImagePath]);
+    
     if (!file_exists($posterImagePath)) {
-        throw new Exception('Poster image not found');
+        debug_log('Poster image not found', [
+            'session_id' => $sessionId,
+            'poster_name' => $posterName,
+            'full_path' => $posterImagePath,
+            'directory_exists' => is_dir(dirname($posterImagePath)),
+            'directory_readable' => is_readable(dirname($posterImagePath)),
+            'available_files' => is_dir(dirname($posterImagePath)) ? scandir(dirname($posterImagePath)) : 'directory not found'
+        ], 'ERROR');
+        throw new Exception('Poster image not found: ' . $posterName);
     }
     
     $posterData = file_get_contents($posterImagePath);
     if (!$posterData) {
+        debug_log('Failed to read poster image', [
+            'session_id' => $sessionId,
+            'poster_path' => $posterImagePath,
+            'file_size' => filesize($posterImagePath),
+            'is_readable' => is_readable($posterImagePath)
+        ], 'ERROR');
         throw new Exception('Failed to read poster image');
     }
     
+    log_processing_step('POSTER_LOAD_COMPLETE', $sessionId, [
+        'poster_size_bytes' => strlen($posterData),
+        'poster_size_kb' => round(strlen($posterData) / 1024, 2)
+    ], $stepStartTime);
+    
     // Determine target side and extract
+    $stepStartTime = microtime(true);
     $targetSide = getTargetSide($posterName);
-    $extractedSideData = extractPosterSide($posterData, $targetSide, $posterName);
-    $targetSideBase64 = base64_encode($extractedSideData);
+    
+    log_processing_step('POSTER_EXTRACT_START', $sessionId, [
+        'target_side' => $targetSide,
+        'poster_name' => $posterName
+    ]);
+    
+    try {
+        $extractedSideData = extractPosterSide($posterData, $targetSide, $posterName);
+        $targetSideBase64 = base64_encode($extractedSideData);
+        
+        log_processing_step('POSTER_EXTRACT_COMPLETE', $sessionId, [
+            'extracted_size_bytes' => strlen($extractedSideData),
+            'base64_size_bytes' => strlen($targetSideBase64),
+            'extraction_ratio' => round(strlen($extractedSideData) / strlen($posterData), 3)
+        ], $stepStartTime);
+    } catch (Exception $e) {
+        debug_log('Poster extraction failed', [
+            'session_id' => $sessionId,
+            'target_side' => $targetSide,
+            'poster_name' => $posterName,
+            'error' => $e->getMessage()
+        ], 'ERROR');
+        throw new Exception('Failed to extract poster side: ' . $e->getMessage());
+    }
     
     // Prepare FaceSwap v4 API request
     $faceSwapData = [
@@ -604,21 +847,101 @@ try {
         'base64' => true
     ];
     
-    debug_log('Starting Segmind API call with retry logic');
+    // Prepare API call
+    $apiStartTime = microtime(true);
+    log_processing_step('SEGMIND_API_START', $sessionId, [
+        'source_image_size' => strlen($userImageBase64),
+        'target_image_size' => strlen($targetSideBase64),
+        'model_type' => $faceSwapData['model_type'],
+        'swap_type' => $faceSwapData['swap_type']
+    ]);
+    
+    debug_log('Starting Segmind API call with retry logic', [
+        'session_id' => $sessionId,
+        'api_params' => array_merge($faceSwapData, [
+            'source_image' => 'base64_data_' . strlen($userImageBase64) . '_bytes',
+            'target_image' => 'base64_data_' . strlen($targetSideBase64) . '_bytes'
+        ])
+    ]);
     
     // Call Segmind FaceSwap v4 API with retry logic
-    $responseData = callSegmindAPIWithRetry($faceSwapData, $SEGMIND_API_KEY);
+    try {
+        $responseData = callSegmindAPIWithRetry($faceSwapData, $SEGMIND_API_KEY);
+        
+        log_processing_step('SEGMIND_API_SUCCESS', $sessionId, [
+            'response_image_size' => strlen($responseData['image'] ?? ''),
+            'total_api_time' => round(microtime(true) - $apiStartTime, 3)
+        ], $apiStartTime);
+    } catch (Exception $e) {
+        debug_log('Segmind API failed completely', [
+            'session_id' => $sessionId,
+            'error' => $e->getMessage(),
+            'total_attempts_time' => round(microtime(true) - $apiStartTime, 3)
+        ], 'ERROR');
+        throw $e;
+    }
     
     // Get the swapped result
-    $swappedResultData = base64_decode($responseData['image']);
+    $stepStartTime = microtime(true);
+    log_processing_step('IMAGE_COMPOSITE_START', $sessionId);
     
-    // Composite result back onto original poster
-    $finalImageData = compositeFinalImage($posterData, $swappedResultData, $targetSide, $posterName);
+    $swappedResultData = base64_decode($responseData['image']);
+    if (!$swappedResultData) {
+        debug_log('Failed to decode API response image', [
+            'session_id' => $sessionId,
+            'response_image_length' => strlen($responseData['image'] ?? ''),
+            'base64_valid' => base64_encode(base64_decode($responseData['image'] ?? '')) === ($responseData['image'] ?? '')
+        ], 'ERROR');
+        throw new Exception('Invalid image data from API response');
+    }
+    
+    try {
+        // Composite result back onto original poster
+        $finalImageData = compositeFinalImage($posterData, $swappedResultData, $targetSide, $posterName);
+        
+        log_processing_step('IMAGE_COMPOSITE_COMPLETE', $sessionId, [
+            'swapped_size_bytes' => strlen($swappedResultData),
+            'final_size_bytes' => strlen($finalImageData),
+            'final_size_kb' => round(strlen($finalImageData) / 1024, 2)
+        ], $stepStartTime);
+    } catch (Exception $e) {
+        debug_log('Image compositing failed', [
+            'session_id' => $sessionId,
+            'target_side' => $targetSide,
+            'poster_name' => $posterName,
+            'swapped_data_size' => strlen($swappedResultData),
+            'poster_data_size' => strlen($posterData),
+            'error' => $e->getMessage()
+        ], 'ERROR');
+        throw new Exception('Failed to composite final image: ' . $e->getMessage());
+    }
     
     // Upload to Supabase if configured
-    $supabaseResult = null;
+    $stepStartTime = microtime(true);
     $filename = $sessionId . '_' . time() . '.png';
-    $supabaseResult = uploadToSupabase($finalImageData, $filename);
+    
+    log_processing_step('SUPABASE_UPLOAD_START', $sessionId, ['filename' => $filename]);
+    
+    $supabaseResult = null;
+    try {
+        $supabaseResult = uploadToSupabase($finalImageData, $filename);
+        
+        if ($supabaseResult) {
+            log_processing_step('SUPABASE_UPLOAD_SUCCESS', $sessionId, [
+                'url' => $supabaseResult['url'],
+                'path' => $supabaseResult['path']
+            ], $stepStartTime);
+        } else {
+            log_processing_step('SUPABASE_UPLOAD_FAILED', $sessionId, ['reason' => 'uploadToSupabase returned null'], $stepStartTime);
+        }
+    } catch (Exception $e) {
+        debug_log('Supabase upload exception', [
+            'session_id' => $sessionId,
+            'filename' => $filename,
+            'error' => $e->getMessage()
+        ], 'ERROR');
+        log_processing_step('SUPABASE_UPLOAD_ERROR', $sessionId, ['error' => $e->getMessage()], $stepStartTime);
+    }
     
     // Track completion in Supabase
     $trackingData = [
@@ -660,50 +983,21 @@ try {
     echo json_encode($response);
     
 } catch (Exception $e) {
-    // Track error in Supabase
-    if (isset($sessionId)) {
-        trackInSupabase($sessionId, [
-            'processing_status' => 'failed',
-            'error_message' => $e->getMessage(),
-            'retry_attempt' => isset($_POST['retryAttempt']) ? intval($_POST['retryAttempt']) : 1
-        ]);
-        
-        // Send failure notification email in background
-        sendFailureNotificationAsync($sessionId, $e->getMessage());
-    }
+    $errorStartTime = microtime(true);
+    $sessionId = $GLOBALS['sessionId'] ?? 'unknown';
     
-    error_log('FaceSwap PHP API error: ' . $e->getMessage());
-    
-    // Determine error type for better user messaging
-    $errorMessage = $e->getMessage();
-    $errorType = 'general';
-    
-    if (strpos($errorMessage, 'timeout') !== false || strpos($errorMessage, 'timed out') !== false) {
-        $errorType = 'timeout';
-        $userMessage = 'Processing is taking longer than expected. We\'re retrying automatically.';
-    } elseif (strpos($errorMessage, 'connection') !== false || strpos($errorMessage, 'network') !== false) {
-        $errorType = 'network';
-        $userMessage = 'Network connection issue. Please check your internet and try again.';
-    } elseif (strpos($errorMessage, 'API') !== false && strpos($errorMessage, 'attempts') !== false) {
-        $errorType = 'api_exhausted';
-        $userMessage = 'Service is currently experiencing high demand. Please try again in a few minutes.';
-    } elseif (strpos($errorMessage, 'Invalid') !== false || strpos($errorMessage, 'failed to read') !== false) {
-        $errorType = 'invalid_input';
-        $userMessage = 'There was an issue with the uploaded image. Please try with a different photo.';
-    } else {
-        $errorType = 'general';
-        $userMessage = 'An unexpected error occurred. Please try again.';
-    }
-    
-    // Clear any accidental output and send error JSON response
-    ob_end_clean();
-    http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'error' => $userMessage,
-        'error_type' => $errorType,
-        'can_retry' => in_array($errorType, ['timeout', 'network', 'api_exhausted']),
-        'suggested_wait' => $errorType === 'api_exhausted' ? 120 : 30 // seconds
-    ]);
-}
+    // Enhanced error logging with full context
+    $errorContext = [
+        'session_id' => $sessionId,
+        'error_message' => $e->getMessage(),
+        'error_file' => $e->getFile(),
+        'error_line' => $e->getLine(),
+        'stack_trace' => $e->getTraceAsString(),
+        'php_memory_usage' => memory_get_usage(true),
+        'php_memory_peak' => memory_get_peak_usage(true),
+        'execution_time' => round(microtime(true) - ($_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true)), 3) . 's',
+        'poster_name' => $_POST['posterName'] ?? 'unknown',
+        'user_image_size' => isset($_FILES['userImage']) ? $_FILES['userImage']['size'] : 'unknown',
+        'retry_attempt' => isset($_POST['retryAttempt']) ? intval($_POST['retryAttempt']) : 1
+    ];\n    \n    debug_log('PROCESSING FAILED - Complete error context', $errorContext, 'CRITICAL');\n    \n    // Track error in Supabase with detailed information\n    if (isset($sessionId) && $sessionId !== 'unknown') {\n        log_processing_step('ERROR_TRACKING_START', $sessionId);\n        \n        $trackingSuccess = trackInSupabase($sessionId, [\n            'processing_status' => 'failed',\n            'error_message' => $e->getMessage(),\n            'retry_attempt' => $errorContext['retry_attempt']\n        ]);\n        \n        if ($trackingSuccess) {\n            log_processing_step('ERROR_TRACKED_SUCCESS', $sessionId);\n        } else {\n            debug_log('Failed to track error in Supabase', ['session_id' => $sessionId], 'ERROR');\n        }\n        \n        // Send failure notification email in background\n        try {\n            sendFailureNotificationAsync($sessionId, $e->getMessage());\n            log_processing_step('FAILURE_EMAIL_SENT', $sessionId);\n        } catch (Exception $emailError) {\n            debug_log('Failed to send failure notification email', [\n                'session_id' => $sessionId,\n                'email_error' => $emailError->getMessage()\n            ], 'ERROR');\n        }\n    }\n    \n    // Log to standard error log as well\n    error_log('FaceSwap PHP API CRITICAL ERROR: ' . $e->getMessage() . ' | Session: ' . $sessionId);\n    \n    // Determine error type for better user messaging with enhanced categorization\n    $errorMessage = $e->getMessage();\n    $errorType = 'general';\n    $userMessage = 'An unexpected error occurred. Please try again.';\n    $canRetry = true;\n    $suggestedWait = 30;\n    \n    if (strpos($errorMessage, 'timeout') !== false || strpos($errorMessage, 'timed out') !== false) {\n        $errorType = 'timeout';\n        $userMessage = 'Processing is taking longer than expected. The service may be experiencing high demand.';\n        $suggestedWait = 60;\n    } elseif (strpos($errorMessage, 'connection') !== false || strpos($errorMessage, 'network') !== false || strpos($errorMessage, 'cURL') !== false) {\n        $errorType = 'network';\n        $userMessage = 'Network connection issue. Please check your internet connection and try again.';\n        $suggestedWait = 30;\n    } elseif (strpos($errorMessage, 'API') !== false && strpos($errorMessage, 'attempts') !== false) {\n        $errorType = 'api_exhausted';\n        $userMessage = 'Service is currently experiencing high demand. Please try again in a few minutes.';\n        $suggestedWait = 120;\n    } elseif (strpos($errorMessage, 'Invalid') !== false || strpos($errorMessage, 'failed to read') !== false || strpos($errorMessage, 'upload') !== false) {\n        $errorType = 'invalid_input';\n        $userMessage = 'There was an issue with the uploaded image. Please try with a different photo.';\n        $canRetry = false;\n        $suggestedWait = 0;\n    } elseif (strpos($errorMessage, 'Memory') !== false || strpos($errorMessage, 'memory') !== false) {\n        $errorType = 'memory';\n        $userMessage = 'The image is too large to process. Please try with a smaller image.';\n        $canRetry = false;\n        $suggestedWait = 0;\n    } elseif (strpos($errorMessage, 'extensions') !== false) {\n        $errorType = 'server_config';\n        $userMessage = 'Server configuration issue. Please contact support.';\n        $canRetry = false;\n        $suggestedWait = 0;\n    } elseif (strpos($errorMessage, 'Poster') !== false || strpos($errorMessage, 'poster') !== false) {\n        $errorType = 'poster_error';\n        $userMessage = 'Issue with the selected poster template. Please try a different poster.';\n        $canRetry = false;\n        $suggestedWait = 0;\n    }\n    \n    $errorResponse = [\n        'success' => false,\n        'error' => $userMessage,\n        'error_type' => $errorType,\n        'can_retry' => $canRetry,\n        'suggested_wait' => $suggestedWait,\n        'session_id' => $sessionId,\n        'timestamp' => date('Y-m-d H:i:s'),\n        'processing_time' => round(microtime(true) - $errorStartTime, 3)\n    ];\n    \n    // Add debug info for development (remove in production)\n    if (defined('DEVELOPMENT_MODE') && DEVELOPMENT_MODE) {\n        $errorResponse['debug'] = [\n            'original_error' => $errorMessage,\n            'memory_usage' => $errorContext['php_memory_usage'],\n            'execution_time' => $errorContext['execution_time']\n        ];\n    }\n    \n    debug_log('Error response prepared', $errorResponse, 'INFO');\n    \n    // Clear any accidental output and send error JSON response\n    ob_end_clean();\n    http_response_code(500);\n    echo json_encode($errorResponse);\n}
 ?> 

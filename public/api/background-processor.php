@@ -26,13 +26,29 @@ header('Access-Control-Allow-Headers: Content-Type');
 // Load environment variables
 require_once __DIR__ . '/../env.php';
 
-// Function to log debug information
-function debug_log($message, $data = null) {
-    $logEntry = date('Y-m-d H:i:s') . ' [BACKGROUND] - ' . $message;
+// Function to log debug information with enhanced details
+function debug_log($message, $data = null, $level = 'INFO') {
+    $logEntry = date('Y-m-d H:i:s') . " [BACKGROUND][$level] - " . $message;
     if ($data !== null) {
         $logEntry .= ' - ' . print_r($data, true);
     }
     error_log($logEntry . "\n", 3, __DIR__ . '/background-processor.log');
+    
+    // Also log to separate error log for failures
+    if ($level === 'ERROR' || $level === 'CRITICAL') {
+        error_log($logEntry . "\n", 3, __DIR__ . '/background-error.log');
+    }
+}
+
+// Function to log processing step with timing for background jobs
+function log_background_step($step, $jobId, $sessionId, $data = null, $startTime = null) {
+    $timing = '';
+    if ($startTime !== null) {
+        $duration = round(microtime(true) - $startTime, 3);
+        $timing = " (took {$duration}s)";
+    }
+    
+    debug_log("BG_STEP: $step - Job: $jobId - Session: $sessionId" . $timing, $data, 'STEP');
 }
 
 // Start processing
