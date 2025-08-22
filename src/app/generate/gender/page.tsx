@@ -1,10 +1,22 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { generateSessionId, trackUserSession, trackUserStep } from '../../../lib/supabase';
+import { SessionManager } from '../../../lib/sessionManager';
+import { useSessionTimeout } from '../../../hooks/useSessionTimeout';
+import { SessionTimeoutModal } from '../../../components/SessionTimeoutModal';
 
 export default function GenderSelectionPage() {
   const [selectedGender, setSelectedGender] = useState<'male' | 'female' | null>(null);
   const [sessionId, setSessionId] = useState<string>('');
+  
+  // Session timeout management
+  const {
+    isExpired,
+    extendSession,
+    clearSession,
+    updateActivity,
+    formatTimeRemaining
+  } = useSessionTimeout(sessionId);
 
   // Initialize session when component mounts
   useEffect(() => {
@@ -12,9 +24,23 @@ export default function GenderSelectionPage() {
       let currentSessionId = localStorage.getItem('sessionId');
       
       if (!currentSessionId) {
-        currentSessionId = generateSessionId();
+        currentSessionId = SessionManager.generateSessionWithTimeout();
         localStorage.setItem('sessionId', currentSessionId);
+        await SessionManager.createSession(currentSessionId);
         await trackUserSession(currentSessionId);
+      } else {
+        // Validate existing session
+        const validation = await SessionManager.validateSession(currentSessionId);
+        if (!validation.isValid) {
+          // Session expired, create new one
+          currentSessionId = SessionManager.generateSessionWithTimeout();
+          localStorage.setItem('sessionId', currentSessionId);
+          await SessionManager.createSession(currentSessionId);
+          await trackUserSession(currentSessionId);
+        } else {
+          // Update activity for existing valid session
+          await SessionManager.updateActivity(currentSessionId);
+        }
       }
       
       setSessionId(currentSessionId);
@@ -32,8 +58,11 @@ export default function GenderSelectionPage() {
   const handleGenderSelect = async (gender: 'male' | 'female') => {
     setSelectedGender(gender);
     
-    // Track gender selection
+    // Update session activity
     if (sessionId) {
+      await updateActivity();
+      
+      // Track gender selection
       await trackUserStep(sessionId, 'gender_selection', {
         selected_gender: gender,
         action: 'gender_selected',
@@ -45,6 +74,9 @@ export default function GenderSelectionPage() {
   const handleContinue = async () => {
     if (selectedGender && sessionId) {
       console.log('Selected gender:', selectedGender);
+      
+      // Update session activity
+      await updateActivity();
       
       // Track final gender submission
       await trackUserStep(sessionId, 'gender_selection', {
@@ -64,6 +96,16 @@ export default function GenderSelectionPage() {
 
   return (
     <div className="w-full">
+      {/* Session Timeout Modal */}
+      <SessionTimeoutModal
+        isOpen={isExpired}
+        isExpired={isExpired}
+        timeRemaining={0}
+        onExtendSession={extendSession}
+        onStartOver={clearSession}
+        formatTimeRemaining={formatTimeRemaining}
+      />
+
       {/* Gender Selection Page */}
       <section 
         className="relative w-full bg-no-repeat bg-top min-h-screen"

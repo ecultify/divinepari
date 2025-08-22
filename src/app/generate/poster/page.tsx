@@ -2,6 +2,9 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { trackUserStep } from '../../../lib/supabase';
+import { SessionManager } from '../../../lib/sessionManager';
+import { useSessionTimeout } from '../../../hooks/useSessionTimeout';
+import { SessionTimeoutModal } from '../../../components/SessionTimeoutModal';
 
 function PosterSelectionPageContent() {
   const searchParams = useSearchParams();
@@ -10,6 +13,15 @@ function PosterSelectionPageContent() {
   const [selectedPoster, setSelectedPoster] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string>('');
   const [imagesLoaded, setImagesLoaded] = useState<boolean>(false);
+
+  // Session timeout management
+  const {
+    isExpired,
+    extendSession,
+    clearSession,
+    updateActivity,
+    formatTimeRemaining
+  } = useSessionTimeout(sessionId);
 
   useEffect(() => {
     // If no gender specified, redirect back to gender selection
@@ -21,15 +33,30 @@ function PosterSelectionPageContent() {
     // Initialize session tracking
     const initSession = async () => {
       const currentSessionId = localStorage.getItem('sessionId') || '';
-      setSessionId(currentSessionId);
       
       if (currentSessionId) {
+        // Validate session before proceeding
+        const validation = await SessionManager.validateSession(currentSessionId);
+        if (!validation.isValid) {
+          // Session expired, redirect to start
+          window.location.href = '/generate/';
+          return;
+        }
+        
+        setSessionId(currentSessionId);
+        
+        // Update session activity
+        await SessionManager.updateActivity(currentSessionId);
+        
         // Track that user reached poster selection
         await trackUserStep(currentSessionId, 'poster_selection', {
           page: 'poster_selection',
           gender: gender,
           timestamp: new Date().toISOString()
         });
+      } else {
+        // No session, redirect to start
+        window.location.href = '/generate/';
       }
     };
     
@@ -107,6 +134,16 @@ function PosterSelectionPageContent() {
 
   return (
     <div className="w-full">
+      {/* Session Timeout Modal */}
+      <SessionTimeoutModal
+        isOpen={isExpired}
+        isExpired={isExpired}
+        timeRemaining={0}
+        onExtendSession={extendSession}
+        onStartOver={clearSession}
+        formatTimeRemaining={formatTimeRemaining}
+      />
+
       {/* Poster Selection Page */}
       <section 
         className="relative w-full bg-no-repeat bg-top min-h-screen"

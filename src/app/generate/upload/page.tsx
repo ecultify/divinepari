@@ -3,6 +3,9 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { compressForFaceSwap, needsCompression, isValidImageFile, getFileSizeKB } from '@/utils/imageCompression';
 import { trackUserStep, trackGenerationResult, uploadBase64Image, queueBackgroundJob, trackUserSession } from '../../../lib/supabase';
+import { SessionManager } from '../../../lib/sessionManager';
+import { useSessionTimeout } from '../../../hooks/useSessionTimeout';
+import { SessionTimeoutModal } from '../../../components/SessionTimeoutModal';
 
 function UploadPhotoPageContent() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -15,6 +18,15 @@ function UploadPhotoPageContent() {
   const [sessionId, setSessionId] = useState<string>('');
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // Session timeout management
+  const {
+    isExpired,
+    extendSession,
+    clearSession,
+    updateActivity,
+    formatTimeRemaining
+  } = useSessionTimeout(sessionId);
   
   // Get data from previous steps
   const gender = searchParams.get('gender');
