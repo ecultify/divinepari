@@ -19,14 +19,14 @@ function ResultPageContent() {
   const [originalFaceSwapImage, setOriginalFaceSwapImage] = useState<string | null>(null);
   const [showLeaveEarlyMessage, setShowLeaveEarlyMessage] = useState(false);
 
-  // Session timeout management
+  // Session timeout management - only activate after session is properly set
   const {
     isExpired,
     extendSession,
     clearSession,
     updateActivity,
     formatTimeRemaining
-  } = useSessionTimeout(sessionId);
+  } = useSessionTimeout(sessionId && sessionId.length > 0 ? sessionId : '');
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -111,10 +111,11 @@ function ResultPageContent() {
         // Create fresh session in database for returning user
         SessionManager.createSession(existingSessionId).then(() => {
           console.log('Fresh session created for returning user');
+          // Only set sessionId after session is created in database
+          setSessionId(existingSessionId);
         });
         
         setProcessedImage(existingPosterUrl); // Display existing poster
-        setSessionId(existingSessionId);
         setLoading(false); // Skip loading animation
         
         // Track result page visit for returning user
