@@ -117,7 +117,7 @@ if ($generation_results) {
                     <thead class="bg-gray-800">
                         <tr>
                             <!-- Session Info -->
-                            <th class="px-4 py-3 text-left font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Session ID</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Generation ID</th>
                             <th class="px-4 py-3 text-left font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Created</th>
                             
                             <!-- User Selections -->
@@ -178,7 +178,7 @@ if ($generation_results) {
                                 <tr class="hover:bg-gray-800">
                                     <!-- Session Info -->
                                     <td class="px-4 py-3 text-gray-300 font-mono whitespace-nowrap">
-                                        <?php echo htmlspecialchars(substr($result['session_id'] ?? 'N/A', -12)); ?>
+                                        <?php echo htmlspecialchars($result['generation_id'] ?? substr($result['session_id'] ?? 'N/A', -12)); ?>
                                     </td>
                                     <td class="px-4 py-3 text-gray-300 whitespace-nowrap">
                                         <?php echo htmlspecialchars(date('M j, H:i', strtotime($result['created_at'] ?? ''))); ?>

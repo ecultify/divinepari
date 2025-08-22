@@ -34,7 +34,7 @@ function ResultPageContent() {
   const gender = searchParams.get('gender');
   const selectedPoster = searchParams.get('poster');
 
-  // Email notification function
+  // Enhanced email notification function with comprehensive tracking
   const sendEmailNotification = async (sessionId: string, posterUrl: string) => {
     try {
       const userEmail = localStorage.getItem('userEmail');
@@ -49,41 +49,49 @@ function ResultPageContent() {
       const emailAlreadySent = await checkIfEmailAlreadySent(sessionId);
       if (emailAlreadySent) {
         console.log('Email already sent for this session, skipping duplicate');
-        // TEMPORARILY DISABLED FOR DEBUGGING - return;
+        return;
       }
 
-      console.log('Sending email notification to:', userEmail);
+      console.log('Sending success email notification to:', userEmail);
       
-      // Use Hostinger SMTP endpoint for reliable email delivery
-      // This uses your domain email (support@posewithdivine.com) via SMTP
-      const response = await fetch('/api/send-email.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Use enhanced email tracking
+      const emailResult = await EmailTracker.sendEmailWithTracking(
+        sessionId,
+        'success',
+        {
           to: userEmail,
           userName: userName || 'there',
           posterUrl: posterUrl,
-          sessionId: sessionId
-        }),
-      });
-
-      const result = await response.json();
+          isFailure: false
+        },
+        'hostinger'
+      );
       
-      if (result.success) {
-        console.log('Email sent successfully');
-        // Update generation result to mark email as sent
+      if (emailResult.success) {
+        console.log('Success email sent and tracked successfully');
+        
+        // Update generation result with legacy compatibility
         await updateGenerationResult(sessionId, {
           user_email: userEmail,
           user_name: userName || undefined,
           email_sent: true
         });
       } else {
-        console.error('Email sending failed:', result.error);
+        console.error('Success email sending failed:', emailResult.error);
       }
     } catch (error) {
       console.error('Error sending email notification:', error);
+      
+      // Track the exception as a failure
+      const userEmail = localStorage.getItem('userEmail');
+      if (userEmail) {
+        await EmailTracker.trackEmailFailure({
+          sessionId,
+          emailType: 'success',
+          emailProvider: 'hostinger',
+          errorMessage: error instanceof Error ? error.message : 'Exception occurred'
+        });
+      }
     }
   };
 
