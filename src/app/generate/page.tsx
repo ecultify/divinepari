@@ -43,13 +43,16 @@ export default function GeneratePage() {
       const userData = await response.json();
       
       if (userData.success && userData.hasPosters) {
-        // Returning user - redirect to result page with existing poster
+        // Returning user - create fresh session and redirect to result page with existing poster
         localStorage.setItem('userName', formData.name);
         localStorage.setItem('userEmail', formData.email);
         localStorage.setItem('existingPosterUrl', userData.latestPoster.posterUrl);
-        localStorage.setItem('sessionId', userData.latestPoster.sessionId);
         localStorage.setItem('selectedGender', userData.latestPoster.gender);
         localStorage.setItem('selectedPoster', userData.latestPoster.posterType);
+        
+        // Generate fresh session ID for returning user
+        const newSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('sessionId', newSessionId);
         
         // Redirect to result page with existing poster
         window.location.href = '/generate/result?mode=existing';

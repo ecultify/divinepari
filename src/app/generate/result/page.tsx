@@ -99,21 +99,24 @@ function ResultPageContent() {
       const storedGender = localStorage.getItem('selectedGender');
       const storedPoster = localStorage.getItem('selectedPoster');
       
-      if (existingPosterUrl) {
+      if (existingPosterUrl && existingSessionId) {
+        // Create fresh session in database for returning user
+        SessionManager.createSession(existingSessionId).then(() => {
+          console.log('Fresh session created for returning user');
+        });
+        
         setProcessedImage(existingPosterUrl); // Display existing poster
         setSessionId(existingSessionId);
         setLoading(false); // Skip loading animation
         
         // Track result page visit for returning user
-        if (existingSessionId) {
-          trackUserStep(existingSessionId, 'result_generated', {
-            page: 'result_page',
-            gender: storedGender,
-            selected_poster: storedPoster,
-            returning_user: true,
-            timestamp: new Date().toISOString()
-          });
-        }
+        trackUserStep(existingSessionId, 'result_generated', {
+          page: 'result_page',
+          gender: storedGender,
+          selected_poster: storedPoster,
+          returning_user: true,
+          timestamp: new Date().toISOString()
+        });
       } else {
         router.push('/generate/');
       }
