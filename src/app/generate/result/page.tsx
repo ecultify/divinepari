@@ -718,6 +718,10 @@ function ResultPageContent() {
     localStorage.removeItem('sessionId');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
+    
+    // Set flag to indicate user wants new generation (bypasses returning user check)
+    localStorage.setItem('forceNewGeneration', 'true');
+    
     router.push('/generate/');
   };
 

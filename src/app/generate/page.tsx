@@ -38,7 +38,27 @@ export default function GeneratePage() {
     console.log('Form submitted:', formData);
     
     try {
-      // Check if returning user with previous posters
+      // Check if user explicitly wants new generation (from Try Again button)
+      const forceNewGeneration = localStorage.getItem('forceNewGeneration') === 'true';
+      
+      if (forceNewGeneration) {
+        // User clicked "Try Again" - force new generation flow
+        localStorage.removeItem('forceNewGeneration'); // Clear flag
+        
+        // Continue to normal flow regardless of previous posters
+        localStorage.setItem('userName', formData.name);
+        localStorage.setItem('userEmail', formData.email);
+        
+        // Generate new session ID
+        const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('sessionId', sessionId);
+        
+        // Navigate to gender selection page for new generation
+        window.location.href = '/generate/gender';
+        return;
+      }
+      
+      // Normal email check for first-time visitors
       const response = await fetch(`/api/check-returning-user.php?email=${encodeURIComponent(formData.email)}`);
       const userData = await response.json();
       
