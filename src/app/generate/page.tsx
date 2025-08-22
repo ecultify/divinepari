@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function GeneratePage() {
   const [formData, setFormData] = useState({
@@ -8,6 +8,16 @@ export default function GeneratePage() {
   });
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
+  const [showTimeoutModal, setShowTimeoutModal] = useState(false);
+
+  // Check if user was redirected due to session timeout
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('timeout') === 'true') {
+      setShowTimeoutModal(true);
+      window.history.replaceState({}, '', '/generate/');
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -17,7 +27,7 @@ export default function GeneratePage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!consentChecked) {
@@ -27,22 +37,83 @@ export default function GeneratePage() {
     
     console.log('Form submitted:', formData);
     
-    // Store user details in localStorage for the session
-    localStorage.setItem('userName', formData.name);
-    localStorage.setItem('userEmail', formData.email);
-    
-    // Generate session ID if not exists
-    if (!localStorage.getItem('sessionId')) {
-      const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('sessionId', sessionId);
+    try {
+      // Check if returning user with previous posters
+      const response = await fetch(`/api/check-returning-user.php?email=${encodeURIComponent(formData.email)}`);
+      const userData = await response.json();
+      
+      if (userData.success && userData.hasPosters) {
+        // Returning user - redirect to result page with existing poster
+        localStorage.setItem('userName', formData.name);
+        localStorage.setItem('userEmail', formData.email);
+        localStorage.setItem('existingPosterUrl', userData.latestPoster.posterUrl);
+        localStorage.setItem('sessionId', userData.latestPoster.sessionId);
+        localStorage.setItem('selectedGender', userData.latestPoster.gender);
+        localStorage.setItem('selectedPoster', userData.latestPoster.posterType);
+        
+        // Redirect to result page with existing poster
+        window.location.href = '/generate/result?mode=existing';
+      } else {
+        // New user - continue normal flow
+        localStorage.setItem('userName', formData.name);
+        localStorage.setItem('userEmail', formData.email);
+        
+        // Generate session ID if not exists
+        if (!localStorage.getItem('sessionId')) {
+          const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+          localStorage.setItem('sessionId', sessionId);
+        }
+        
+        // Navigate to gender selection page
+        window.location.href = '/generate/gender';
+      }
+    } catch (error) {
+      console.error('Error checking returning user:', error);
+      
+      // On error, continue with normal flow
+      localStorage.setItem('userName', formData.name);
+      localStorage.setItem('userEmail', formData.email);
+      
+      if (!localStorage.getItem('sessionId')) {
+        const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('sessionId', sessionId);
+      }
+      
+      window.location.href = '/generate/gender';
     }
-    
-    // Navigate to gender selection page
-    window.location.href = '/generate/gender';
   };
 
   return (
     <div className="w-full">
+      {/* Session Timeout Modal */}
+      {showTimeoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md mx-4 p-6 z-10">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Session Timed Out</h3>
+              <p className="text-gray-600 mb-6">
+                Your session expired after 5 minutes of inactivity for security reasons. Please start over.
+              </p>
+              <button
+                onClick={() => setShowTimeoutModal(false)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Continue
+              </button>
+              <p className="text-xs text-gray-400 mt-4">
+                Sessions expire automatically for your security.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Generate Page */}
       <section 
         className="relative w-full bg-no-repeat bg-top min-h-screen"

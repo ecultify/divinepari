@@ -11,6 +11,9 @@ export interface UserSession {
   session_id: string
   created_at?: string
   updated_at?: string
+  expires_at?: string
+  is_active?: boolean
+  last_activity?: string
 }
 
 export interface UserJourney {
@@ -24,6 +27,7 @@ export interface UserJourney {
 export interface GenerationResult {
   id?: string
   session_id: string
+  generation_id?: string
   gender: string
   poster_selected: string
   user_image_uploaded: boolean
@@ -42,6 +46,18 @@ export interface GenerationResult {
   email_sent?: boolean
   created_at?: string
   error_message?: string
+  // Enhanced email tracking fields
+  email_type?: 'success' | 'failure' | 'none'
+  email_status?: 'pending' | 'sent' | 'failed' | 'bounced' | 'delivered' | 'opened' | 'clicked'
+  email_sent_at?: string
+  email_error_message?: string
+  email_attempts?: number
+  email_provider?: 'hostinger' | 'mandrill' | 'gmail' | 'sendgrid'
+  email_message_id?: string
+  failure_email_sent?: boolean
+  failure_email_sent_at?: string
+  success_email_sent?: boolean
+  success_email_sent_at?: string
 }
 
 export interface BackgroundJob {
@@ -89,10 +105,18 @@ export interface DownloadTracking {
 // Helper functions for tracking
 export const trackUserSession = async (sessionId: string) => {
   try {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes from now
+
     // Use upsert to handle existing sessions
     const { data, error } = await supabase
       .from('user_sessions')
-      .upsert([{ session_id: sessionId }], { 
+      .upsert([{ 
+        session_id: sessionId,
+        expires_at: expiresAt.toISOString(),
+        last_activity: now.toISOString(),
+        is_active: true
+      }], { 
         onConflict: 'session_id',
         ignoreDuplicates: false 
       })
@@ -169,6 +193,11 @@ export const updateGenerationResult = async (sessionId: string, updates: Partial
 // Generate unique session ID
 export const generateSessionId = () => {
   return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+}
+
+// Generate unique generation ID for each poster creation
+export const generateGenerationId = () => {
+  return `gen_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`
 }
 
 // Image storage functions

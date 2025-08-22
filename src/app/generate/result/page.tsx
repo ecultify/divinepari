@@ -1,7 +1,11 @@
 'use client';
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { trackUserStep, updateGenerationResult, uploadBase64Image, trackDownload, checkIfEmailAlreadySent } from '../../../lib/supabase';
+import { trackUserStep, updateGenerationResult, uploadBase64Image, trackDownload, checkIfEmailAlreadySent, generateGenerationId } from '../../../lib/supabase';
+import { SessionManager } from '../../../lib/sessionManager';
+import { useSessionTimeout } from '../../../hooks/useSessionTimeout';
+import { SessionTimeoutModal } from '../../../components/SessionTimeoutModal';
+import { EmailTracker } from '../../../lib/emailTracker';
 
 function ResultPageContent() {
   const [loading, setLoading] = useState(true);
@@ -10,9 +14,19 @@ function ResultPageContent() {
   const [userImage, setUserImage] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [sessionId, setSessionId] = useState<string>('');
+  const [generationId, setGenerationId] = useState<string>('');
   const [hairSwappedImage, setHairSwappedImage] = useState<string | null>(null);
   const [originalFaceSwapImage, setOriginalFaceSwapImage] = useState<string | null>(null);
   const [showLeaveEarlyMessage, setShowLeaveEarlyMessage] = useState(false);
+
+  // Session timeout management
+  const {
+    isExpired,
+    extendSession,
+    clearSession,
+    updateActivity,
+    formatTimeRemaining
+  } = useSessionTimeout(sessionId);
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -74,7 +88,39 @@ function ResultPageContent() {
   };
 
   useEffect(() => {
-    // Get user image from localStorage
+    // Check if this is a returning user with existing poster
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    
+    if (mode === 'existing') {
+      // Returning user - display existing poster from Supabase
+      const existingPosterUrl = localStorage.getItem('existingPosterUrl');
+      const existingSessionId = localStorage.getItem('sessionId') || '';
+      const storedGender = localStorage.getItem('selectedGender');
+      const storedPoster = localStorage.getItem('selectedPoster');
+      
+      if (existingPosterUrl) {
+        setProcessedImage(existingPosterUrl); // Display existing poster
+        setSessionId(existingSessionId);
+        setLoading(false); // Skip loading animation
+        
+        // Track result page visit for returning user
+        if (existingSessionId) {
+          trackUserStep(existingSessionId, 'result_generated', {
+            page: 'result_page',
+            gender: storedGender,
+            selected_poster: storedPoster,
+            returning_user: true,
+            timestamp: new Date().toISOString()
+          });
+        }
+      } else {
+        router.push('/generate/');
+      }
+      return;
+    }
+    
+    // Normal flow for new users
     const storedUserImage = localStorage.getItem('userImage');
     const storedPoster = localStorage.getItem('selectedPoster');
     const storedGender = localStorage.getItem('selectedGender');
@@ -90,18 +136,23 @@ function ResultPageContent() {
     setUserImage(storedUserImage);
     }
     
+    // Generate unique generation ID for this poster creation
+    const currentGenerationId = generateGenerationId();
+    setGenerationId(currentGenerationId);
+    
     // Track result page visit
     if (currentSessionId) {
       trackUserStep(currentSessionId, 'result_generated', {
         page: 'result_page',
         gender: storedGender,
         selected_poster: storedPoster,
+        generation_id: currentGenerationId,
         timestamp: new Date().toISOString()
       });
     }
 
     if (storedUserImage && storedPoster && storedGender) {
-    processFaceSwap(storedUserImage, storedPoster, storedGender, currentSessionId);
+    processFaceSwap(storedUserImage, storedPoster, storedGender, currentSessionId, currentGenerationId);
     
     // Show "leave early" message after 30 seconds
     const leaveEarlyTimer = setTimeout(() => {
@@ -114,7 +165,7 @@ function ResultPageContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  const processFaceSwap = async (userImage: string, posterName: string, gender: string, sessionId: string) => {
+  const processFaceSwap = async (userImage: string, posterName: string, gender: string, sessionId: string, generationId: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -144,10 +195,12 @@ function ResultPageContent() {
       formData.append('userImage', blob, 'user-photo.jpg');
       formData.append('posterName', posterName);
       formData.append('sessionId', sessionId);
+      formData.append('generationId', generationId);
 
       console.log('FormData created with fields:', {
         posterName: formData.get('posterName'),
         sessionId: formData.get('sessionId'),
+        generationId: formData.get('generationId'),
         hasUserImage: formData.has('userImage')
       });
       setProgress(30);
@@ -917,6 +970,16 @@ function ResultPageContent() {
 
   return (
     <div className="w-full">
+      {/* Session Timeout Modal */}
+      <SessionTimeoutModal
+        isOpen={isExpired}
+        isExpired={isExpired}
+        timeRemaining={0}
+        onExtendSession={extendSession}
+        onStartOver={clearSession}
+        formatTimeRemaining={formatTimeRemaining}
+      />
+
       <section 
         className="relative w-full bg-no-repeat bg-top min-h-screen"
         style={{
