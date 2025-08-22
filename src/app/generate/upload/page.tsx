@@ -391,6 +391,16 @@ function UploadPhotoPageContent() {
 
   return (
     <div className="w-full">
+      {/* Session Timeout Modal */}
+      <SessionTimeoutModal
+        isOpen={isExpired}
+        isExpired={isExpired}
+        timeRemaining={0}
+        onExtendSession={extendSession}
+        onStartOver={clearSession}
+        formatTimeRemaining={formatTimeRemaining}
+      />
+
       {/* Upload Photo Page */}
       <section 
         className="relative w-full bg-no-repeat bg-top min-h-screen"
