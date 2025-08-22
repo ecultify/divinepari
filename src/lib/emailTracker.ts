@@ -20,10 +20,19 @@ export class EmailTracker {
    */
   static async trackEmailAttempt(data: EmailTrackingData): Promise<boolean> {
     try {
+      // First get current email_attempts count
+      const { data: currentData } = await supabase
+        .from('generation_results')
+        .select('email_attempts')
+        .eq('session_id', data.sessionId)
+        .single();
+
+      const currentAttempts = currentData?.email_attempts || 0;
+
       const { error } = await supabase
         .from('generation_results')
         .update({
-          email_attempts: supabase.sql`COALESCE(email_attempts, 0) + 1`,
+          email_attempts: currentAttempts + 1,
           email_type: data.emailType,
           email_status: 'pending',
           email_provider: data.emailProvider || 'hostinger',
