@@ -130,7 +130,7 @@ function ResultPageContent() {
     const currentSessionId = localStorage.getItem('sessionId') || '';
 
     if (!storedUserImage || !storedPoster || !storedGender) {
-      router.push('/generate/gender');
+      router.push('/generate/');
       return;
     }
 
@@ -711,11 +711,14 @@ function ResultPageContent() {
   };
 
   const handleTryAgain = () => {
-    // Clear localStorage and start over
+    // Clear localStorage and start over completely
     localStorage.removeItem('userImage');
     localStorage.removeItem('selectedPoster');
     localStorage.removeItem('selectedGender');
-    router.push('/generate/gender');
+    localStorage.removeItem('sessionId');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    router.push('/generate/');
   };
 
   if (loading) {
